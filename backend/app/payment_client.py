@@ -22,4 +22,12 @@ class PaymentClient:
         response.raise_for_status()
         return response.json()
 
+
+    def get_payment_intent(self, intent_id: str) -> dict:
+        url = f"{self.base_url}/api/v1/payments/payment-intents/{intent_id}"
+        headers = {"Authorization": f"Bearer {self.secret_key}"}
+        response = httpx.get(url, headers=headers, timeout=15.0)
+        response.raise_for_status()
+        return response.json()
+
 payment_client = PaymentClient()
