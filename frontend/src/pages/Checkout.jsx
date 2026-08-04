@@ -3,6 +3,18 @@ import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { tokenizeCard, confirmPaymentIntent } from "../api/payment";
 import client from "../api/client";
 
+function extractErrorMessage(err) {
+  const detail = err.response?.data?.detail;
+  if (Array.isArray(detail)) {
+    // FastAPI validation errors (422) come back as a list of {loc, msg, type}
+    return detail.map((d) => `${d.loc?.slice(-1)[0]}: ${d.msg}`).join(", ");
+  }
+  if (typeof detail === "string") {
+    return detail; // HTTPException(detail="...") style errors
+  }
+  return "Payment could not be processed";
+}
+
 export default function Checkout() {
   const { orderId } = useParams();
   const location = useLocation();
@@ -25,10 +37,10 @@ export default function Checkout() {
     try {
       // Step 1: tokenize the card with pk_ — raw card details never touch our own backend
       const method = await tokenizeCard({
-        card_number: card.number,
+        card_number: card.number.replace(/\s/g, ""),
         exp_month: Number(card.exp_month),
         exp_year: Number(card.exp_year),
-        cvc: card.cvc,
+        cvv: card.cvc,
       });
 
       // Step 2: confirm the intent with the token, still using pk_
@@ -50,7 +62,7 @@ export default function Checkout() {
       }
     } catch (err) {
       setStatus("error");
-      setMessage(err.response?.data?.detail || "Payment could not be processed");
+      setMessage(extractErrorMessage(err));
     }
   }
 
