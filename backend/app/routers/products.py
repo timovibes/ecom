@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
@@ -9,10 +9,23 @@ from app.dependencies import get_current_admin
 
 router = APIRouter(prefix="/api/v1/products", tags=["products"])
 
+SORT_OPTIONS = {
+    "newest": Product.created_at.desc(),
+    "oldest": Product.created_at.asc(),
+    "price_asc": Product.price_minor.asc(),
+    "price_desc": Product.price_minor.desc(),
+    "name_asc": Product.name.asc(),
+    "name_desc": Product.name.desc(),
+}
+
 @router.get("/", response_model=List[ProductOut])
 def list_products(
+    response: Response,
     category_id: Optional[int] = None,
     search: Optional[str] = Query(None, description="search by product name"),
+    sort_by: str = Query("newest", description=f"one of {sorted(SORT_OPTIONS)}"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(24, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
     query = db.query(Product)
@@ -20,7 +33,14 @@ def list_products(
         query = query.filter(Product.category_id == category_id)
     if search:
         query = query.filter(Product.name.ilike(f"%{search}%"))
-    return query.all()
+
+    total = query.count()
+    response.headers["X-Total-Count"] = str(total)
+
+    order_clause = SORT_OPTIONS.get(sort_by, SORT_OPTIONS["newest"])
+    query = query.order_by(order_clause)
+
+    return query.offset(skip).limit(limit).all()
 
 @router.get("/{product_id}", response_model=ProductOut)
 def get_product(product_id: int, db: Session = Depends(get_db)):
