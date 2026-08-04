@@ -12,10 +12,11 @@ export async function tokenizeCard(cardDetails) {
   return res.data; // { id: payment_method_id, ... }
 }
 
-export async function confirmPaymentIntent(intentId, paymentMethodId) {
+export async function confirmPaymentIntent(intentId, clientSecret, paymentMethodId) {
   const res = await paymentClient.post(
     `/api/v1/checkout/payment-intents/${intentId}/confirm`,
-    { payment_method_id: paymentMethodId }
+    { payment_method_id: paymentMethodId },
+    { params: { client_secret: clientSecret } }
   );
-  return res.data; // { status: "succeeded" | "declined", failure_reason, ... }
+  return res.data;
 }

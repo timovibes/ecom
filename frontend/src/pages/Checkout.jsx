@@ -44,7 +44,7 @@ export default function Checkout() {
       });
 
       // Step 2: confirm the intent with the token, still using pk_
-      const result = await confirmPaymentIntent(intent.payment_intent_id, method.id);
+      const result = await confirmPaymentIntent(intent.payment_intent_id, intent.client_secret, method.id);
 
       // Critical: a decline is still HTTP 200. Check status explicitly, never response.ok alone.
       if (result.status === "succeeded") {
