@@ -152,3 +152,133 @@ input:focus, select:focus, textarea:focus {
   gap: 16px;
   margin-top: 32px;
 }
+
+/* --- Home shop layout (sidebar + content) --- */
+.shop {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+.shop-sidebar {
+  flex: 0 0 220px;
+  position: sticky;
+  top: 20px;
+}
+
+.shop-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-close { display: none; }
+
+.sidebar-section { margin-bottom: 32px; }
+
+.sidebar-heading {
+  font-family: var(--font-display);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--grey-600);
+  margin-bottom: 10px;
+}
+
+.category-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.category-item button {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--black);
+}
+
+.category-item button:hover { background: var(--grey-100); color: var(--black); }
+
+.category-item.active button {
+  background: var(--black);
+  color: var(--white);
+}
+
+.category-item-count {
+  float: right;
+  color: var(--grey-600);
+  font-size: 12px;
+}
+
+.category-item.active .category-item-count { color: var(--grey-300); }
+
+.clear-filters {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  text-decoration: underline;
+  color: var(--black);
+}
+.clear-filters:hover { background: none; color: var(--grey-600); }
+
+.results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.results-count { font-size: 13px; color: var(--grey-600); }
+
+.mobile-filter-toggle { display: none; }
+
+.section-controls {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.sidebar-backdrop { display: none; }
+
+@media (max-width: 860px) {
+  .shop { flex-direction: column; }
+
+  .shop-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    background: var(--white);
+    border-right: 1px solid var(--black);
+    padding: 24px 20px;
+    overflow-y: auto;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .shop-sidebar.open { transform: translateX(0); }
+
+  .sidebar-close {
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  .sidebar-backdrop.open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 99;
+  }
+
+  .mobile-filter-toggle { display: inline-flex; }
+}

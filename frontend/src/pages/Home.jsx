@@ -53,6 +53,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [visibleSections, setVisibleSections] = useState(SECTIONS_PER_PAGE);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     client.get("/api/v1/categories/")
@@ -108,6 +109,17 @@ export default function Home() {
     return sections;
   }, [browsingAll, products, categories]);
 
+  // Category -> product count, only meaningful while browsing the full catalog.
+  const categoryCounts = useMemo(() => {
+    const counts = new Map();
+    if (!browsingAll) return counts;
+    for (const p of products) {
+      const key = p.category_id == null ? "none" : p.category_id;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    return counts;
+  }, [browsingAll, products]);
+
   const visibleSectioned = sectioned.slice(0, visibleSections);
   const canShowMore = visibleSections < sectioned.length;
   const canShowLess = visibleSections > SECTIONS_PER_PAGE;
@@ -116,113 +128,177 @@ export default function Home() {
   const totalPages = Math.max(1, Math.ceil(sortedFlat.length / PAGE_SIZE));
   const pageItems = sortedFlat.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const hasActiveFilters = Boolean(search || categoryId);
+
+  const selectCategory = (id) => {
+    setCategoryId(id);
+    setSidebarOpen(false);
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    setCategoryId("");
+    setSidebarOpen(false);
+  };
+
+  const activeCategoryName = categoryId
+    ? categories.find((c) => String(c.id) === String(categoryId))?.name
+    : null;
+
   return (
-    <div>
-      <div className="filters-bar">
-        <input
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ maxWidth: 320 }}
-        />
-        <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          style={{ maxWidth: 200 }}
-        >
-          <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        {!browsingAll && (
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            style={{ maxWidth: 200 }}
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      {error && <p className="error">{error}</p>}
-      {loading && <p className="muted">Loading products...</p>}
-
-      {!loading && !error && products.length === 0 && (
-        <p className="muted">No products found.</p>
+    <div className="shop">
+      {sidebarOpen && (
+        <div className="sidebar-backdrop open" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {!loading && !error && browsingAll && (canShowMore || canShowLess) && (
-        <div className="section-controls" style={{ display: "flex", gap: 8, margin: "12px 0" }}>
-          {canShowMore && (
-            <button onClick={() => setVisibleSections((n) => n + SECTIONS_PER_PAGE)}>
-              Show more categories
-            </button>
-          )}
-          {canShowLess && (
-            <button onClick={() => setVisibleSections(SECTIONS_PER_PAGE)}>
-              Show less
-            </button>
-          )}
+      <aside className={`shop-sidebar${sidebarOpen ? " open" : ""}`}>
+        <button className="sidebar-close" onClick={() => setSidebarOpen(false)}>
+          Close
+        </button>
+
+        <div className="sidebar-section">
+          <h2 className="sidebar-heading">Search</h2>
+          <input
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-      )}
 
-      {!loading && !error && browsingAll && visibleSectioned.map((section) => (
-        <div key={section.id} className="product-section">
-          <div className="product-section-header">
-            <h2>{section.name}</h2>
-            {section.items.length > SECTION_PREVIEW_SIZE && (
-              <button onClick={() => setCategoryId(section.id === "none" ? "" : String(section.id))}>
-                View all ({section.items.length})
+        <div className="sidebar-section">
+          <h2 className="sidebar-heading">Categories</h2>
+          <ul className="category-list">
+            <li className={`category-item${!categoryId ? " active" : ""}`}>
+              <button onClick={() => selectCategory("")}>
+                All products
+                {browsingAll && <span className="category-item-count">{products.length}</span>}
+              </button>
+            </li>
+            {categories.map((c) => (
+              <li
+                key={c.id}
+                className={`category-item${String(categoryId) === String(c.id) ? " active" : ""}`}
+              >
+                <button onClick={() => selectCategory(String(c.id))}>
+                  {c.name}
+                  {browsingAll && categoryCounts.has(c.id) && (
+                    <span className="category-item-count">{categoryCounts.get(c.id)}</span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {!browsingAll && (
+          <div className="sidebar-section">
+            <h2 className="sidebar-heading">Sort by</h2>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {hasActiveFilters && (
+          <button className="clear-filters" onClick={clearFilters}>
+            Clear all filters
+          </button>
+        )}
+      </aside>
+
+      <div className="shop-main">
+        <div className="results-bar">
+          <button className="mobile-filter-toggle" onClick={() => setSidebarOpen(true)}>
+            Filters
+          </button>
+          <span className="results-count">
+            {loading
+              ? "Loading products..."
+              : browsingAll
+                ? `${products.length} product${products.length === 1 ? "" : "s"}`
+                : `${sortedFlat.length} result${sortedFlat.length === 1 ? "" : "s"}${
+                    activeCategoryName ? ` in ${activeCategoryName}` : ""
+                  }${search ? ` for "${search}"` : ""}`}
+          </span>
+        </div>
+
+        {error && <p className="error">{error}</p>}
+
+        {!loading && !error && products.length === 0 && (
+          <p className="muted">No products found.</p>
+        )}
+
+        {!loading && !error && browsingAll && (canShowMore || canShowLess) && (
+          <div className="section-controls">
+            {canShowMore && (
+              <button onClick={() => setVisibleSections((n) => n + SECTIONS_PER_PAGE)}>
+                Show more categories
+              </button>
+            )}
+            {canShowLess && (
+              <button onClick={() => setVisibleSections(SECTIONS_PER_PAGE)}>
+                Show less
               </button>
             )}
           </div>
-          <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
-            {section.items.slice(0, SECTION_PREVIEW_SIZE).map((p) => (
-              <ProductCard key={p.id} p={p} />
-            ))}
-          </div>
-        </div>
-      ))}
+        )}
 
-      {!loading && !error && browsingAll && (canShowMore || canShowLess) && (
-        <div className="section-controls" style={{ display: "flex", gap: 8, margin: "12px 0" }}>
-          {canShowMore && (
-            <button onClick={() => setVisibleSections((n) => n + SECTIONS_PER_PAGE)}>
-              Show more categories
-            </button>
-          )}
-          {canShowLess && (
-            <button onClick={() => setVisibleSections(SECTIONS_PER_PAGE)}>
-              Show less
-            </button>
-          )}
-        </div>
-      )}
-
-      {!loading && !error && !browsingAll && (
-        <>
-          <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
-            {pageItems.map((p) => (
-              <ProductCard key={p.id} p={p} />
-            ))}
-          </div>
-          {totalPages > 1 && (
-            <div className="pagination">
-              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
-                Prev
-              </button>
-              <span className="muted">Page {page} of {totalPages}</span>
-              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-                Next
-              </button>
+        {!loading && !error && browsingAll && visibleSectioned.map((section) => (
+          <div key={section.id} className="product-section">
+            <div className="product-section-header">
+              <h2>{section.name}</h2>
+              {section.items.length > SECTION_PREVIEW_SIZE && (
+                <button onClick={() => selectCategory(section.id === "none" ? "" : String(section.id))}>
+                  View all ({section.items.length})
+                </button>
+              )}
             </div>
-          )}
-        </>
-      )}
+            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+              {section.items.slice(0, SECTION_PREVIEW_SIZE).map((p) => (
+                <ProductCard key={p.id} p={p} />
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {!loading && !error && browsingAll && (canShowMore || canShowLess) && (
+          <div className="section-controls">
+            {canShowMore && (
+              <button onClick={() => setVisibleSections((n) => n + SECTIONS_PER_PAGE)}>
+                Show more categories
+              </button>
+            )}
+            {canShowLess && (
+              <button onClick={() => setVisibleSections(SECTIONS_PER_PAGE)}>
+                Show less
+              </button>
+            )}
+          </div>
+        )}
+
+        {!loading && !error && !browsingAll && (
+          <>
+            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+              {pageItems.map((p) => (
+                <ProductCard key={p.id} p={p} />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                  Prev
+                </button>
+                <span className="muted">Page {page} of {totalPages}</span>
+                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
