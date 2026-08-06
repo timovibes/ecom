@@ -6,7 +6,16 @@ export default function Layout() {
 
   return (
     <div>
-      <header style={{ borderBottom: "1px solid var(--black)", padding: "16px 0" }}>
+      <header
+  style={{
+    borderBottom: "1px solid var(--black)",
+    padding: "16px 0",
+    position: "sticky",
+    top: 0,
+    background: "var(--white)",
+    zIndex: 50,
+  }}
+>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Link to="/" className="brand" style={{ fontSize: 20 }}>STORE</Link>
           <nav style={{ display: "flex", gap: 20, alignItems: "center" }}>
