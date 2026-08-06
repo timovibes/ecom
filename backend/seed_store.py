@@ -3,7 +3,7 @@ Seed script — logs in as an admin user and bulk-creates categories + products
 so the store front end has real content to show instead of an empty grid.
 
 Safe to re-run: existing products (matched by name) are skipped instead of
-being created again.
+being created again. Any existing product found with 0 stock is restocked.
 
 Usage:
     pip install requests
@@ -25,6 +25,9 @@ ADMIN_PASSWORD = os.environ.get("STORE_ADMIN_PASSWORD", "123456789")
 
 # How many products to create per category.
 PRODUCTS_PER_CATEGORY = 16
+
+# All products are always in stock — no more 0-stock rows get created.
+STOCK_CHOICES = [3, 5, 8, 12, 20, 40]
 
 CATALOG = {
     "Electronics": [
@@ -82,7 +85,8 @@ CATALOG = {
 
 # Extra products with odd-cent prices (e.g. .01 / .02 / .03) to check
 # rounding/display behaviour on the frontend. Named normally so they don't
-# stand out as obvious test data in the UI.
+# stand out as obvious test data in the UI. Covers every category in
+# CATALOG at least once, with a spread across .01 / .02 / .03.
 ODD_CENT_TEST_PRODUCTS = [
     {"name": "Wireless Charging Cable", "category": "Electronics", "price_minor": 901},
     {"name": "Bamboo Cutting Board", "category": "Home & Kitchen", "price_minor": 1902},
@@ -90,6 +94,16 @@ ODD_CENT_TEST_PRODUCTS = [
     {"name": "The Night Circus", "category": "Books", "price_minor": 9901},
     {"name": "Adjustable Yoga Block", "category": "Sports & Outdoors", "price_minor": 14902},
     {"name": "Rose Water Toner", "category": "Beauty & Personal Care", "price_minor": 19903},
+    {"name": "Stacking Puzzle Cubes", "category": "Toys & Games", "price_minor": 2901},
+    {"name": "Metal Paper Clip Tin", "category": "Office & Stationery", "price_minor": 601},
+    {"name": "USB-C Car Charger", "category": "Electronics", "price_minor": 24902},
+    {"name": "Marble Coasters Set", "category": "Home & Kitchen", "price_minor": 3403},
+    {"name": "Merino Wool Beanie", "category": "Clothing", "price_minor": 2202},
+    {"name": "The Paper Palace", "category": "Books", "price_minor": 8401},
+    {"name": "Neoprene Dumbbell Pair", "category": "Sports & Outdoors", "price_minor": 34903},
+    {"name": "Charcoal Face Scrub", "category": "Beauty & Personal Care", "price_minor": 5201},
+    {"name": "Magnetic Building Tiles", "category": "Toys & Games", "price_minor": 44902},
+    {"name": "Leather Desk Mat", "category": "Office & Stationery", "price_minor": 12903},
 ]
 
 
@@ -108,21 +122,17 @@ def login(session: requests.Session) -> str:
     return token
 
 
-def get_existing_product_names(session: requests.Session) -> set[str]:
-    resp = session.get(f"{BASE_URL}/api/v1/products/")
+def get_existing_products(session: requests.Session) -> list[dict]:
+    resp = session.get(f"{BASE_URL}/api/v1/products/", params={"limit": 1000})
     resp.raise_for_status()
-    return {p["name"] for p in resp.json()}
+    return resp.json()
 
 
-def rename_existing_test_products(session: requests.Session) -> None:
+def rename_existing_test_products(session: requests.Session, products: list[dict]) -> None:
     """One-time fix: renames any leftover 'Test Product X.XX' rows (from an
     older version of this script) to normal names, matched by price_minor.
     Prices are left untouched since the odd-cent values are needed for
     rounding/display testing."""
-    resp = session.get(f"{BASE_URL}/api/v1/products/", params={"limit": 100})
-    resp.raise_for_status()
-    products = resp.json()
-
     targets = [p for p in products if p["name"].startswith("Test Product ")]
     if not targets:
         return
@@ -138,8 +148,30 @@ def rename_existing_test_products(session: requests.Session) -> None:
         resp = session.patch(f"{BASE_URL}/api/v1/products/{p['id']}", json={"name": new_name})
         if resp.status_code == 200:
             print(f"  - renamed '{p['name']}' -> '{new_name}'")
+            p["name"] = new_name
         else:
             print(f"  ! failed to rename '{p['name']}' (id={p['id']}): {resp.status_code} {resp.text}")
+
+
+def restock_existing_products(session: requests.Session, products: list[dict]) -> None:
+    """Bring any existing 0-stock product back into stock."""
+    out_of_stock = [p for p in products if p.get("stock_quantity") == 0]
+    if not out_of_stock:
+        print("No existing out-of-stock products found.\n")
+        return
+
+    print(f"Restocking {len(out_of_stock)} existing out-of-stock product(s)...")
+    for p in out_of_stock:
+        new_stock = random.choice(STOCK_CHOICES)
+        resp = session.patch(
+            f"{BASE_URL}/api/v1/products/{p['id']}", json={"stock_quantity": new_stock}
+        )
+        if resp.status_code == 200:
+            print(f"  - restocked '{p['name']}' -> {new_stock}")
+            p["stock_quantity"] = new_stock
+        else:
+            print(f"  ! failed to restock '{p['name']}' (id={p['id']}): {resp.status_code} {resp.text}")
+    print()
 
 
 def get_or_create_category(session: requests.Session, name: str) -> int:
@@ -171,7 +203,7 @@ def create_product(
 ) -> bool:
     if price_minor is None:
         price_minor = random.randint(500, 15000) * 10  # e.g. 5,000 - 150,000 (KES cents)
-    stock = random.choice([0, 3, 5, 8, 12, 20, 40])
+    stock = random.choice(STOCK_CHOICES)
     payload = {
         "name": name,
         "description": f"{name} — a great pick from our {category_name} range. "
@@ -194,9 +226,11 @@ def main():
     login(session)
     print("Logged in.\n")
 
-    rename_existing_test_products(session)
+    existing_products = get_existing_products(session)
+    rename_existing_test_products(session, existing_products)
+    restock_existing_products(session, existing_products)
 
-    existing_names = get_existing_product_names(session)
+    existing_names = {p["name"] for p in existing_products}
     print(f"Found {len(existing_names)} existing product(s) — these will be skipped.\n")
 
     total_created = 0
