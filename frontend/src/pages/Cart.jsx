@@ -5,6 +5,7 @@ import client from "../api/client";
 export default function Cart() {
   const [cart, setCart] = useState(null);
   const [error, setError] = useState("");
+  const [checkingOut, setCheckingOut] = useState(false);
   const navigate = useNavigate();
 
   function loadCart() {
@@ -25,11 +26,15 @@ export default function Cart() {
   }
 
   async function checkout() {
+    if (checkingOut) return;
+    setCheckingOut(true);
+    setError("");
     try {
       const res = await client.post("/api/v1/checkout/");
       navigate(`/checkout/${res.data.order_id}`, { state: res.data });
     } catch (err) {
       setError(err.response?.data?.detail || "Checkout failed");
+      setCheckingOut(false);
     }
   }
 
@@ -61,7 +66,9 @@ export default function Cart() {
           <p className="price" style={{ fontSize: 18, marginBottom: 12 }}>
             Total: {(total / 100).toFixed(2)} {cart.items[0].product.currency.toUpperCase()}
           </p>
-          <button className="primary" onClick={checkout}>Proceed to checkout</button>
+          <button className="primary" onClick={checkout} disabled={checkingOut}>
+            {checkingOut ? "Processing..." : "Proceed to checkout"}
+          </button>
         </div>
       )}
     </div>
