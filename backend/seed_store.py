@@ -123,9 +123,22 @@ def login(session: requests.Session) -> str:
 
 
 def get_existing_products(session: requests.Session) -> list[dict]:
-    resp = session.get(f"{BASE_URL}/api/v1/products/", params={"limit": 1000})
-    resp.raise_for_status()
-    return resp.json()
+    """Fetches all products, paginating in case the API caps `limit`."""
+    all_products = []
+    skip = 0
+    page_size = 100
+    while True:
+        resp = session.get(
+            f"{BASE_URL}/api/v1/products/",
+            params={"limit": page_size, "skip": skip},
+        )
+        resp.raise_for_status()
+        page = resp.json()
+        all_products.extend(page)
+        if len(page) < page_size:
+            break
+        skip += page_size
+    return all_products
 
 
 def rename_existing_test_products(session: requests.Session, products: list[dict]) -> None:
