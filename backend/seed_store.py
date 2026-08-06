@@ -21,42 +21,72 @@ ADMIN_EMAIL = os.environ.get("STORE_ADMIN_EMAIL", "Admin@gmail.com")
 ADMIN_PASSWORD = os.environ.get("STORE_ADMIN_PASSWORD", "123456789")
 
 # How many products to create per category.
-PRODUCTS_PER_CATEGORY = 12
+PRODUCTS_PER_CATEGORY = 16
 
 CATALOG = {
     "Electronics": [
         "Wireless Earbuds", "Bluetooth Speaker", "27-inch Monitor", "Mechanical Keyboard",
         "Wireless Mouse", "USB-C Hub", "Portable Power Bank", "Smart Watch",
         "Noise Cancelling Headphones", "Webcam 1080p", "Laptop Stand", "HDMI Cable 2m",
+        "Wireless Charger Pad", "External SSD 1TB", "Smart Plug", "Action Camera",
     ],
     "Home & Kitchen": [
         "Stainless Steel Kettle", "Non-stick Frying Pan Set", "Ceramic Dinner Set",
         "French Press Coffee Maker", "Cutting Board Set", "Electric Blender",
         "Toaster 2-Slice", "Knife Block Set", "Storage Container Set", "Table Lamp",
-        "Throw Pillow Set", "Cotton Bath Towel Set",
+        "Throw Pillow Set", "Cotton Bath Towel Set", "Air Fryer", "Rice Cooker",
+        "Dish Rack", "Laundry Basket",
     ],
     "Clothing": [
         "Men's Cotton T-Shirt", "Women's Denim Jacket", "Unisex Hoodie", "Slim Fit Chinos",
         "Running Shorts", "Wool Sweater", "Rain Jacket", "Leather Belt",
         "Canvas Sneakers", "Baseball Cap", "Ankle Socks 3-Pack", "Linen Shirt",
+        "Summer Dress", "Track Pants", "Denim Shorts", "Flannel Shirt",
     ],
     "Books": [
         "The Midnight Library", "Atomic Habits", "Sapiens: A Brief History of Humankind",
         "Project Hail Mary", "The Silent Patient", "Educated: A Memoir",
         "Dune", "The Psychology of Money", "Where the Crawdads Sing",
         "Klara and the Sun", "The Four Winds", "Deep Work",
+        "Ikigai", "Thinking, Fast and Slow", "The Alchemist", "Zero to One",
     ],
     "Sports & Outdoors": [
         "Yoga Mat", "Adjustable Dumbbell Set", "Running Shoes", "Camping Tent 2-Person",
         "Insulated Water Bottle", "Resistance Bands Set", "Cycling Helmet",
         "Hiking Backpack 30L", "Jump Rope", "Foam Roller", "Sleeping Bag", "Sports Duffel Bag",
+        "Football", "Skipping Mat", "Fishing Rod", "Camping Chair",
     ],
     "Beauty & Personal Care": [
         "Vitamin C Serum", "Electric Toothbrush", "Hair Dryer", "Facial Cleanser",
         "Moisturizing Body Lotion", "Sunscreen SPF 50", "Beard Trimmer", "Perfume 100ml",
         "Makeup Brush Set", "Shampoo & Conditioner Set", "Nail Care Kit", "Lip Balm 3-Pack",
+        "Hair Straightener", "Body Wash", "Face Mask Set", "Deodorant 2-Pack",
+    ],
+    "Toys & Games": [
+        "Building Blocks Set", "Board Game Classic Pack", "Remote Control Car",
+        "Puzzle 1000 Pieces", "Plush Teddy Bear", "Action Figure Set",
+        "Card Game Deck", "Kids Art Supplies Kit", "Toy Kitchen Set", "Building Robot Kit",
+        "Wooden Train Set", "Water Gun", "Kite", "Bubble Maker",
+        "Doll House", "Kids Bicycle Helmet",
+    ],
+    "Office & Stationery": [
+        "Notebook A5 Ruled", "Ballpoint Pen Pack", "Desk Organizer", "Sticky Notes Set",
+        "Highlighter Set", "Stapler", "Whiteboard Markers", "File Folders Pack",
+        "Desk Calendar", "Scissors", "Correction Tape", "Push Pins Box",
+        "Clipboard", "Envelope Pack", "Label Maker", "Ring Binder",
     ],
 }
+
+# Extra test products with odd-cent prices (e.g. .01 / .02 / .03) to check
+# rounding/display behaviour on the frontend.
+ODD_CENT_TEST_PRODUCTS = [
+    {"name": "Test Product 9.01", "category": "Electronics", "price_minor": 901},
+    {"name": "Test Product 19.02", "category": "Home & Kitchen", "price_minor": 1902},
+    {"name": "Test Product 49.03", "category": "Clothing", "price_minor": 4903},
+    {"name": "Test Product 99.01", "category": "Books", "price_minor": 9901},
+    {"name": "Test Product 149.02", "category": "Sports & Outdoors", "price_minor": 14902},
+    {"name": "Test Product 199.03", "category": "Beauty & Personal Care", "price_minor": 19903},
+]
 
 
 def login(session: requests.Session) -> str:
@@ -94,8 +124,15 @@ def get_or_create_category(session: requests.Session, name: str) -> int:
     resp.raise_for_status()
 
 
-def create_product(session: requests.Session, name: str, category_id: int, category_name: str) -> bool:
-    price_minor = random.randint(500, 15000) * 10  # e.g. 5,000 - 150,000 (KES cents)
+def create_product(
+    session: requests.Session,
+    name: str,
+    category_id: int,
+    category_name: str,
+    price_minor: int | None = None,
+) -> bool:
+    if price_minor is None:
+        price_minor = random.randint(500, 15000) * 10  # e.g. 5,000 - 150,000 (KES cents)
     stock = random.choice([0, 3, 5, 8, 12, 20, 40])
     payload = {
         "name": name,
@@ -120,9 +157,12 @@ def main():
     print("Logged in.\n")
 
     total_created = 0
+    category_ids = {}
+
     for category_name, product_names in CATALOG.items():
         print(f"Category: {category_name}")
         category_id = get_or_create_category(session, category_name)
+        category_ids[category_name] = category_id
 
         for name in product_names[:PRODUCTS_PER_CATEGORY]:
             ok = create_product(session, name, category_id, category_name)
@@ -130,7 +170,17 @@ def main():
                 total_created += 1
                 print(f"  + {name}")
 
-    print(f"\nDone. Created {total_created} products across {len(CATALOG)} categories.")
+    print("\nOdd-cent test products:")
+    for item in ODD_CENT_TEST_PRODUCTS:
+        category_name = item["category"]
+        category_id = category_ids.get(category_name) or get_or_create_category(session, category_name)
+        ok = create_product(session, item["name"], category_id, category_name, price_minor=item["price_minor"])
+        if ok:
+            total_created += 1
+            print(f"  + {item['name']}")
+
+    print(f"\nDone. Created {total_created} products across {len(CATALOG) } categories "
+          f"(plus {len(ODD_CENT_TEST_PRODUCTS)} odd-cent test items).")
 
 
 if __name__ == "__main__":
