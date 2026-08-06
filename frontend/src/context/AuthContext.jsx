@@ -13,10 +13,9 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
-    // No /auth/me endpoint was built, so we trust the stored token
-    // and decode the minimal info we saved at login time.
-    const stored = localStorage.getItem("user_email");
-    if (stored) setUser({ email: stored });
+    const storedEmail = localStorage.getItem("user_email");
+    const storedIsAdmin = localStorage.getItem("is_admin") === "true";
+    if (storedEmail) setUser({ email: storedEmail, is_admin: storedIsAdmin });
     setLoading(false);
   }, []);
 
@@ -26,7 +25,8 @@ export function AuthProvider({ children }) {
     });
     localStorage.setItem("access_token", res.data.access_token);
     localStorage.setItem("user_email", email);
-    setUser({ email });
+    localStorage.setItem("is_admin", res.data.is_admin);
+    setUser({ email, is_admin: res.data.is_admin });
   }
 
   async function signup(email, password, full_name) {
@@ -37,6 +37,7 @@ export function AuthProvider({ children }) {
   function logout() {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user_email");
+    localStorage.removeItem("is_admin");
     setUser(null);
   }
 

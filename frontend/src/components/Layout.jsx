@@ -15,7 +15,7 @@ export default function Layout() {
             {user ? (
               <>
                 <Link to="/orders">Orders</Link>
-                <Link to="/admin">Admin</Link>
+                {user.is_admin && <Link to="/admin">Admin</Link>}
                 <button onClick={logout}>Logout</button>
               </>
             ) : (
