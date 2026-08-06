@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import client from "../api/client";
 
 const PAGE_SIZE = 12;
-const SECTION_PREVIEW_SIZE = 6;
+const SECTION_PREVIEW_SIZE = 8;
+const SECTIONS_PER_PAGE = 2;
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest" },
@@ -51,6 +52,7 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [visibleSections, setVisibleSections] = useState(SECTIONS_PER_PAGE);
 
   useEffect(() => {
     client.get("/api/v1/categories/")
@@ -63,6 +65,7 @@ export default function Home() {
     const params = {};
     if (search) params.search = search;
     if (categoryId) params.category_id = categoryId;
+    if (!search && !categoryId) params.limit = 100; // browsing-all: need full catalog to group by category
     client.get("/api/v1/products/", { params })
       .then((res) => {
         setProducts(res.data);
@@ -76,6 +79,11 @@ export default function Home() {
   useEffect(() => {
     setPage(1);
   }, [search, categoryId, sortBy]);
+
+  // Reset section pagination whenever we come back to the "browsing all" view.
+  useEffect(() => {
+    setVisibleSections(SECTIONS_PER_PAGE);
+  }, [search, categoryId]);
 
   const browsingAll = !search && !categoryId;
 
@@ -99,6 +107,10 @@ export default function Home() {
     }
     return sections;
   }, [browsingAll, products, categories]);
+
+  const visibleSectioned = sectioned.slice(0, visibleSections);
+  const canShowMore = visibleSections < sectioned.length;
+  const canShowLess = visibleSections > SECTIONS_PER_PAGE;
 
   const sortedFlat = useMemo(() => sortProducts(products, sortBy), [products, sortBy]);
   const totalPages = Math.max(1, Math.ceil(sortedFlat.length / PAGE_SIZE));
@@ -143,7 +155,22 @@ export default function Home() {
         <p className="muted">No products found.</p>
       )}
 
-      {!loading && !error && browsingAll && sectioned.map((section) => (
+      {!loading && !error && browsingAll && (canShowMore || canShowLess) && (
+        <div className="section-controls" style={{ display: "flex", gap: 8, margin: "12px 0" }}>
+          {canShowMore && (
+            <button onClick={() => setVisibleSections((n) => n + SECTIONS_PER_PAGE)}>
+              Show more categories
+            </button>
+          )}
+          {canShowLess && (
+            <button onClick={() => setVisibleSections(SECTIONS_PER_PAGE)}>
+              Show less
+            </button>
+          )}
+        </div>
+      )}
+
+      {!loading && !error && browsingAll && visibleSectioned.map((section) => (
         <div key={section.id} className="product-section">
           <div className="product-section-header">
             <h2>{section.name}</h2>
@@ -160,6 +187,21 @@ export default function Home() {
           </div>
         </div>
       ))}
+
+      {!loading && !error && browsingAll && (canShowMore || canShowLess) && (
+        <div className="section-controls" style={{ display: "flex", gap: 8, margin: "12px 0" }}>
+          {canShowMore && (
+            <button onClick={() => setVisibleSections((n) => n + SECTIONS_PER_PAGE)}>
+              Show more categories
+            </button>
+          )}
+          {canShowLess && (
+            <button onClick={() => setVisibleSections(SECTIONS_PER_PAGE)}>
+              Show less
+            </button>
+          )}
+        </div>
+      )}
 
       {!loading && !error && !browsingAll && (
         <>
