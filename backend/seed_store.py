@@ -97,7 +97,6 @@ def get_or_create_category(session: requests.Session, name: str) -> int:
 def create_product(session: requests.Session, name: str, category_id: int, category_name: str) -> bool:
     price_minor = random.randint(500, 15000) * 10  # e.g. 5,000 - 150,000 (KES cents)
     stock = random.choice([0, 3, 5, 8, 12, 20, 40])
-    seed = name.lower().replace(" ", "-").replace("'", "").replace("&", "and")
     payload = {
         "name": name,
         "description": f"{name} — a great pick from our {category_name} range. "
@@ -105,7 +104,6 @@ def create_product(session: requests.Session, name: str, category_id: int, categ
         "price_minor": price_minor,
         "currency": "kes",
         "stock_quantity": stock,
-        "image_url": f"https://picsum.photos/seed/{seed}/600/600",
         "category_id": category_id,
     }
     resp = session.post(f"{BASE_URL}/api/v1/products/", json=payload)

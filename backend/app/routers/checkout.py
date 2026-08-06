@@ -107,6 +107,12 @@ def sync_payment(
             product = db.query(Product).filter(Product.id == item.product_id).first()
             if product:
                 product.stock_quantity = max(0, product.stock_quantity - item.quantity)
+
+        # Clear the user's cart now that the order is paid for.
+        cart = db.query(Cart).filter(Cart.user_id == current_user.id).first()
+        if cart:
+            db.query(CartItem).filter(CartItem.cart_id == cart.id).delete()
+
     elif gateway_status == "declined":
         order.status = "declined"
     # any other status (e.g. "pending") — leave order.status as "pending", nothing to do yet
