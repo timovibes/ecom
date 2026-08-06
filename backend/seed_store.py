@@ -80,15 +80,16 @@ CATALOG = {
     ],
 }
 
-# Extra test products with odd-cent prices (e.g. .01 / .02 / .03) to check
-# rounding/display behaviour on the frontend.
+# Extra products with odd-cent prices (e.g. .01 / .02 / .03) to check
+# rounding/display behaviour on the frontend. Named normally so they don't
+# stand out as obvious test data in the UI.
 ODD_CENT_TEST_PRODUCTS = [
-    {"name": "Test Product 9.01", "category": "Electronics", "price_minor": 901},
-    {"name": "Test Product 19.02", "category": "Home & Kitchen", "price_minor": 1902},
-    {"name": "Test Product 49.03", "category": "Clothing", "price_minor": 4903},
-    {"name": "Test Product 99.01", "category": "Books", "price_minor": 9901},
-    {"name": "Test Product 149.02", "category": "Sports & Outdoors", "price_minor": 14902},
-    {"name": "Test Product 199.03", "category": "Beauty & Personal Care", "price_minor": 19903},
+    {"name": "Wireless Charging Cable", "category": "Electronics", "price_minor": 901},
+    {"name": "Bamboo Cutting Board", "category": "Home & Kitchen", "price_minor": 1902},
+    {"name": "Fleece Zip Hoodie", "category": "Clothing", "price_minor": 4903},
+    {"name": "The Night Circus", "category": "Books", "price_minor": 9901},
+    {"name": "Adjustable Yoga Block", "category": "Sports & Outdoors", "price_minor": 14902},
+    {"name": "Rose Water Toner", "category": "Beauty & Personal Care", "price_minor": 19903},
 ]
 
 
@@ -111,6 +112,34 @@ def get_existing_product_names(session: requests.Session) -> set[str]:
     resp = session.get(f"{BASE_URL}/api/v1/products/")
     resp.raise_for_status()
     return {p["name"] for p in resp.json()}
+
+
+def rename_existing_test_products(session: requests.Session) -> None:
+    """One-time fix: renames any leftover 'Test Product X.XX' rows (from an
+    older version of this script) to normal names, matched by price_minor.
+    Prices are left untouched since the odd-cent values are needed for
+    rounding/display testing."""
+    resp = session.get(f"{BASE_URL}/api/v1/products/", params={"limit": 100})
+    resp.raise_for_status()
+    products = resp.json()
+
+    targets = [p for p in products if p["name"].startswith("Test Product ")]
+    if not targets:
+        return
+
+    print(f"Renaming {len(targets)} old test-named product(s)...")
+    for p in targets:
+        new_name = next(
+            (i["name"] for i in ODD_CENT_TEST_PRODUCTS if i["price_minor"] == p["price_minor"]),
+            None,
+        )
+        if not new_name:
+            continue
+        resp = session.patch(f"{BASE_URL}/api/v1/products/{p['id']}", json={"name": new_name})
+        if resp.status_code == 200:
+            print(f"  - renamed '{p['name']}' -> '{new_name}'")
+        else:
+            print(f"  ! failed to rename '{p['name']}' (id={p['id']}): {resp.status_code} {resp.text}")
 
 
 def get_or_create_category(session: requests.Session, name: str) -> int:
@@ -164,6 +193,8 @@ def main():
     print(f"Logging in as {ADMIN_EMAIL} at {BASE_URL} ...")
     login(session)
     print("Logged in.\n")
+
+    rename_existing_test_products(session)
 
     existing_names = get_existing_product_names(session)
     print(f"Found {len(existing_names)} existing product(s) — these will be skipped.\n")
