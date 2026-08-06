@@ -2,6 +2,9 @@
 Seed script — logs in as an admin user and bulk-creates categories + products
 so the store front end has real content to show instead of an empty grid.
 
+Safe to re-run: existing products (matched by name) are skipped instead of
+being created again.
+
 Usage:
     pip install requests
     python seed_store.py
@@ -104,6 +107,12 @@ def login(session: requests.Session) -> str:
     return token
 
 
+def get_existing_product_names(session: requests.Session) -> set[str]:
+    resp = session.get(f"{BASE_URL}/api/v1/products/")
+    resp.raise_for_status()
+    return {p["name"] for p in resp.json()}
+
+
 def get_or_create_category(session: requests.Session, name: str) -> int:
     resp = session.get(f"{BASE_URL}/api/v1/categories/")
     resp.raise_for_status()
@@ -156,7 +165,11 @@ def main():
     login(session)
     print("Logged in.\n")
 
+    existing_names = get_existing_product_names(session)
+    print(f"Found {len(existing_names)} existing product(s) — these will be skipped.\n")
+
     total_created = 0
+    total_skipped = 0
     category_ids = {}
 
     for category_name, product_names in CATALOG.items():
@@ -165,22 +178,30 @@ def main():
         category_ids[category_name] = category_id
 
         for name in product_names[:PRODUCTS_PER_CATEGORY]:
+            if name in existing_names:
+                total_skipped += 1
+                continue
             ok = create_product(session, name, category_id, category_name)
             if ok:
+                existing_names.add(name)
                 total_created += 1
                 print(f"  + {name}")
 
     print("\nOdd-cent test products:")
     for item in ODD_CENT_TEST_PRODUCTS:
+        name = item["name"]
+        if name in existing_names:
+            total_skipped += 1
+            continue
         category_name = item["category"]
         category_id = category_ids.get(category_name) or get_or_create_category(session, category_name)
-        ok = create_product(session, item["name"], category_id, category_name, price_minor=item["price_minor"])
+        ok = create_product(session, name, category_id, category_name, price_minor=item["price_minor"])
         if ok:
+            existing_names.add(name)
             total_created += 1
-            print(f"  + {item['name']}")
+            print(f"  + {name}")
 
-    print(f"\nDone. Created {total_created} products across {len(CATALOG) } categories "
-          f"(plus {len(ODD_CENT_TEST_PRODUCTS)} odd-cent test items).")
+    print(f"\nDone. Created {total_created} product(s), skipped {total_skipped} already-existing product(s).")
 
 
 if __name__ == "__main__":
