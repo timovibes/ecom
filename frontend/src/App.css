@@ -324,6 +324,50 @@ input:focus, select:focus {
   color: var(--color-black);
 }
 
+/* Forms */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-grey);
+}
+
+.field-row {
+  display: flex;
+  gap: 16px;
+}
+
+.checkout-summary {
+  border-top: 1px solid var(--color-black);
+  border-bottom: 1px solid var(--color-outline-variant);
+  padding: 24px 0;
+  margin-bottom: 32px;
+}
+
+.status-message {
+  padding: 16px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+.status-message.success {
+  background: var(--color-black);
+  color: var(--color-white);
+  text-transform: uppercase;
+}
+
+.status-message.error {
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+}
+
 /* Mobile */
 @media (max-width: 900px) {
   .shop { grid-template-columns: 1fr; }

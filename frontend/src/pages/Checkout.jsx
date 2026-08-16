@@ -26,7 +26,7 @@ export default function Checkout() {
   const [message, setMessage] = useState("");
 
   if (!intent) {
-    return <p className="error">No payment info found. Please checkout from your cart again.</p>;
+    return <p className="error">No payment info found. Please checkout from your bag again.</p>;
   }
 
   async function handlePay(e) {
@@ -67,27 +67,43 @@ export default function Checkout() {
   }
 
   return (
-    <div style={{ maxWidth: 400 }}>
-      <h2 style={{ marginBottom: 8 }}>Pay for Order #{orderId}</h2>
-      <p className="price" style={{ marginBottom: 20 }}>
-        {(intent.amount_minor / 100).toFixed(2)} {intent.currency.toUpperCase()}
-      </p>
+    <div style={{ maxWidth: 440 }}>
+      <h2 style={{ marginBottom: 24 }}>Payment</h2>
 
-      {status === "succeeded" && <p className="badge">PAYMENT SUCCEEDED</p>}
-      {status === "declined" && <p className="error">Declined: {message}</p>}
-      {status === "error" && <p className="error">{message}</p>}
+      <div className="checkout-summary" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span className="muted">Order #{orderId}</span>
+        <span className="price" style={{ fontSize: 18 }}>
+          {(intent.amount_minor / 100).toFixed(2)} {intent.currency.toUpperCase()}
+        </span>
+      </div>
+
+      {status === "succeeded" && <p className="status-message success">Payment succeeded</p>}
+      {status === "declined" && <p className="status-message error">Declined: {message}</p>}
+      {status === "error" && <p className="status-message error">{message}</p>}
 
       {status !== "succeeded" && (
-        <form onSubmit={handlePay} style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
-          <input placeholder="Card number" value={card.number}
-            onChange={(e) => setCard({ ...card, number: e.target.value })} required />
-          <div style={{ display: "flex", gap: 8 }}>
-            <input placeholder="MM" value={card.exp_month}
-              onChange={(e) => setCard({ ...card, exp_month: e.target.value })} required />
-            <input placeholder="YYYY" value={card.exp_year}
-              onChange={(e) => setCard({ ...card, exp_year: e.target.value })} required />
-            <input placeholder="CVC" value={card.cvc}
-              onChange={(e) => setCard({ ...card, cvc: e.target.value })} required />
+        <form onSubmit={handlePay} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div className="field">
+            <label>Card number</label>
+            <input value={card.number}
+              onChange={(e) => setCard({ ...card, number: e.target.value })} required />
+          </div>
+          <div className="field-row">
+            <div className="field">
+              <label>Month</label>
+              <input placeholder="MM" value={card.exp_month}
+                onChange={(e) => setCard({ ...card, exp_month: e.target.value })} required />
+            </div>
+            <div className="field">
+              <label>Year</label>
+              <input placeholder="YYYY" value={card.exp_year}
+                onChange={(e) => setCard({ ...card, exp_year: e.target.value })} required />
+            </div>
+            <div className="field">
+              <label>CVC</label>
+              <input value={card.cvc}
+                onChange={(e) => setCard({ ...card, cvc: e.target.value })} required />
+            </div>
           </div>
           <button className="primary" type="submit" disabled={status === "processing"}>
             {status === "processing" ? "Processing..." : "Pay now"}
