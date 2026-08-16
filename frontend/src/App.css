@@ -423,6 +423,59 @@ input:focus, select:focus {
 .badge.status-pending { background: var(--color-grey); }
 .badge.status-declined { background: var(--color-error); }
 
+/* Admin */
+.admin-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--color-black);
+}
+
+.admin-tabs button {
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  padding: 12px 24px 12px 0;
+  margin-right: 24px;
+}
+
+.admin-tabs button:hover { background: none; color: var(--color-gold); }
+
+.admin-tabs button.active {
+  border-bottom: 2px solid var(--color-black);
+  color: var(--color-black);
+}
+
+.admin-form {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  padding: 24px 0;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.admin-form .field { min-width: 140px; }
+
+.admin-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.admin-row-delete {
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--color-grey);
+  font-size: 11px;
+}
+
+.admin-row-delete:hover { background: none; color: var(--color-error); }
+
 
 /* Mobile */
 @media (max-width: 900px) {
