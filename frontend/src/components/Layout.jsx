@@ -6,19 +6,10 @@ export default function Layout() {
 
   return (
     <div>
-      <header
-  style={{
-    borderBottom: "1px solid var(--black)",
-    padding: "16px 0",
-    position: "sticky",
-    top: 0,
-    background: "var(--white)",
-    zIndex: 50,
-  }}
->
+      <header className="site-header">
         <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Link to="/" className="brand" style={{ fontSize: 20 }}>STORE</Link>
-          <nav style={{ display: "flex", gap: 20, alignItems: "center" }}>
+          <Link to="/" className="brand">Aurelian</Link>
+          <nav className="site-nav">
             <Link to="/">Products</Link>
             <Link to="/cart">Cart</Link>
             {user ? (
@@ -36,9 +27,15 @@ export default function Layout() {
           </nav>
         </div>
       </header>
-      <main className="container" style={{ padding: "32px 0" }}>
+      <main className="container" style={{ padding: "64px 0" }}>
         <Outlet />
       </main>
+      <footer className="site-footer">
+        <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>© 2026 AURELIAN. All rights reserved.</span>
+          <span>Shipping · Returns · Privacy</span>
+        </div>
+      </footer>
     </div>
   );
 }
