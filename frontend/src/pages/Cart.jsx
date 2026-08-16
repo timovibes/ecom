@@ -45,25 +45,33 @@ export default function Cart() {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 20 }}>Cart</h2>
-      {cart.items.length === 0 && <p className="muted">Your cart is empty.</p>}
-      {cart.items.map((item) => (
-        <div key={item.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <div>
-            <p>{item.product.name}</p>
-            <p className="muted">{(item.product.price_minor / 100).toFixed(2)} {item.product.currency.toUpperCase()} each</p>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button onClick={() => updateQty(item.id, item.quantity - 1)}>-</button>
-            <span>{item.quantity}</span>
-            <button onClick={() => updateQty(item.id, item.quantity + 1)}>+</button>
-            <button onClick={() => removeItem(item.id)}>Remove</button>
-          </div>
-        </div>
-      ))}
+      <h2 style={{ marginBottom: 32 }}>Shopping Bag</h2>
+      {cart.items.length === 0 && <p className="muted">Your bag is empty.</p>}
+
       {cart.items.length > 0 && (
-        <div style={{ marginTop: 24, textAlign: "right" }}>
-          <p className="price" style={{ fontSize: 18, marginBottom: 12 }}>
+        <div className="cart-list">
+          {cart.items.map((item) => (
+            <div key={item.id} className="cart-item">
+              <div>
+                <p className="cart-item-name">{item.product.name}</p>
+                <p className="muted">{(item.product.price_minor / 100).toFixed(2)} {item.product.currency.toUpperCase()} each</p>
+              </div>
+              <div className="cart-item-controls">
+                <div className="qty-control">
+                  <button onClick={() => updateQty(item.id, item.quantity - 1)}>-</button>
+                  <span>{item.quantity}</span>
+                  <button onClick={() => updateQty(item.id, item.quantity + 1)}>+</button>
+                </div>
+                <button className="remove-link" onClick={() => removeItem(item.id)}>Remove</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {cart.items.length > 0 && (
+        <div className="cart-summary">
+          <p className="cart-total">
             Total: {(total / 100).toFixed(2)} {cart.items[0].product.currency.toUpperCase()}
           </p>
           <button className="primary" onClick={checkout} disabled={checkingOut}>
