@@ -396,6 +396,34 @@ input:focus, select:focus {
   margin-top: 8px;
 }
 
+/* Orders */
+.order-list {
+  border-top: 1px solid var(--color-black);
+}
+
+.order-row {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.order-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.order-row-id {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--color-black);
+}
+
+.badge.status-paid { background: var(--color-black); }
+.badge.status-pending { background: var(--color-grey); }
+.badge.status-declined { background: var(--color-error); }
+
+
 /* Mobile */
 @media (max-width: 900px) {
   .shop { grid-template-columns: 1fr; }

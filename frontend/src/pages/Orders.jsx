@@ -13,21 +13,26 @@ export default function Orders() {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 20 }}>Order history</h2>
+      <h2 style={{ marginBottom: 32 }}>Order History</h2>
       {orders.length === 0 && <p className="muted">No orders yet.</p>}
-      {orders.map((o) => (
-        <div key={o.id} className="card" style={{ marginBottom: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <p>Order #{o.id}</p>
-            <span className="badge">{o.status.toUpperCase()}</span>
-          </div>
-          <p className="price" style={{ marginTop: 8 }}>
-            {(o.total_amount_minor / 100).toFixed(2)} {o.currency.toUpperCase()}
-          </p>
-          <p className="muted">{new Date(o.created_at).toLocaleString()}</p>
-          {o.payment?.failure_reason && <p className="error" style={{ marginTop: 8 }}>{o.payment.failure_reason}</p>}
+
+      {orders.length > 0 && (
+        <div className="order-list">
+          {orders.map((o) => (
+            <div key={o.id} className="order-row">
+              <div className="order-row-header">
+                <span className="order-row-id">Order #{o.id}</span>
+                <span className={`badge status-${o.status}`}>{o.status.toUpperCase()}</span>
+              </div>
+              <p className="price" style={{ marginBottom: 4 }}>
+                {(o.total_amount_minor / 100).toFixed(2)} {o.currency.toUpperCase()}
+              </p>
+              <p className="muted">{new Date(o.created_at).toLocaleString()}</p>
+              {o.payment?.failure_reason && <p className="error" style={{ marginTop: 8 }}>{o.payment.failure_reason}</p>}
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
