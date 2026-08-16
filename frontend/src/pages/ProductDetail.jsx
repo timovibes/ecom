@@ -34,19 +34,26 @@ export default function ProductDetail() {
   if (!product) return null;
 
   return (
-    <div style={{ maxWidth: 480 }}>
-      <h2 style={{ fontSize: 24, marginBottom: 12 }}>{product.name}</h2>
-      <p className="price" style={{ fontSize: 20, marginBottom: 12 }}>
-        {(product.price_minor / 100).toFixed(2)} {product.currency.toUpperCase()}
-      </p>
-      <p className="muted" style={{ marginBottom: 20 }}>{product.description}</p>
-      <p className="muted" style={{ marginBottom: 20 }}>
-        {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : "Out of stock"}
-      </p>
-      <button className="primary" onClick={addToCart} disabled={product.stock_quantity === 0}>
-        Add to cart
-      </button>
-      {added && <p className="muted" style={{ marginTop: 8 }}>Added to cart.</p>}
+    <div className="product-detail">
+      <div className="product-detail-image">
+        {product.image_url
+          ? <img src={product.image_url} alt={product.name} />
+          : <span className="muted">No image</span>}
+      </div>
+      <div className="product-detail-info">
+        <h2>{product.name}</h2>
+        <p className="price" style={{ fontSize: 18, marginBottom: 24 }}>
+          {(product.price_minor / 100).toFixed(2)} {product.currency.toUpperCase()}
+        </p>
+        <p className="muted" style={{ marginBottom: 24, lineHeight: 1.8 }}>{product.description}</p>
+        <p className="muted" style={{ marginBottom: 32 }}>
+          {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : "Out of stock"}
+        </p>
+        <button className="primary" onClick={addToCart} disabled={product.stock_quantity === 0}>
+          Add to cart
+        </button>
+        {added && <p className="muted" style={{ marginTop: 12 }}>Added to cart.</p>}
+      </div>
     </div>
   );
 }
