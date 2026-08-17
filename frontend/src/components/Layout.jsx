@@ -27,7 +27,7 @@ export default function Layout() {
           </nav>
         </div>
       </header>
-      <main className="container" style={{ padding: "64px 0" }}>
+      <main className="container" style={{ paddingTop: 64, paddingBottom: 64 }}>
         <Outlet />
       </main>
       <footer className="site-footer">
