@@ -1,21 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Montserrat:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Hanken+Grotesk:wght@300;400;500;600&display=swap');
 
 :root {
-  --color-surface: #f2ede2;
-  --color-surface-container: #e8e1d1;
-  --color-surface-container-low: #ede6d8;
-  --color-on-surface: #1a1a17;
-  --color-outline: #8a8368;
-  --color-outline-variant: #d4c9ab;
-  --color-gold: #26312a;
-  --color-brass: #a8874f;
-  --color-black: #1a1a17;
-  --color-white: #f7f5f0;
-  --color-grey: #6b6558;
-  --color-error: #ba1a1a;
+  --color-surface: #1a1c2c;
+  --color-surface-container: #24263a;
+  --color-surface-container-low: #202235;
+  --color-on-surface: #e8e9ee;
+  --color-outline: #787678;
+  --color-outline-variant: #3a3c50;
+  --color-gold: #4a6568;
+  --color-brass: #a0aec0;
+  --color-black: #e8e9ee;
+  --color-white: #1a1c2c;
+  --color-grey: #9aa0ab;
+  --color-error: #e5726a;
 
   --font-display: 'Playfair Display', serif;
-  --font-body: 'Montserrat', sans-serif;
+  --font-body: 'Hanken Grotesk', sans-serif;
 
   --container-max: 1440px;
   --gutter: 32px;
