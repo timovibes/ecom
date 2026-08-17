@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     payment_api_base_url: str
     payment_secret_key: str
 
+    unsplash_access_key: str = ""
+
     class Config:
         env_file = ".env"
 
