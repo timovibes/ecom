@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
@@ -8,6 +8,7 @@ export default function ProductDetail() {
   const [product, setProduct] = useState(null);
   const [error, setError] = useState("");
   const [added, setAdded] = useState(false);
+  const [qty, setQty] = useState(1);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -23,7 +24,7 @@ export default function ProductDetail() {
       return;
     }
     try {
-      await client.post("/api/v1/cart/items", { product_id: Number(id), quantity: 1 });
+      await client.post("/api/v1/cart/items", { product_id: Number(id), quantity: qty });
       setAdded(true);
     } catch {
       setError("Could not add to cart");
@@ -33,26 +34,82 @@ export default function ProductDetail() {
   if (error) return <p className="error">{error}</p>;
   if (!product) return null;
 
+  const inStock = product.stock_quantity > 0;
+
   return (
-    <div className="product-detail">
-      <div className="product-detail-image">
-        {product.image_url
-          ? <img src={product.image_url} alt={product.name} />
-          : <span className="muted">No image</span>}
-      </div>
-      <div className="product-detail-info">
-        <h2>{product.name}</h2>
-        <p className="price" style={{ fontSize: 18, marginBottom: 24 }}>
-          {(product.price_minor / 100).toFixed(2)} {product.currency.toUpperCase()}
-        </p>
-        <p className="muted" style={{ marginBottom: 24, lineHeight: 1.8 }}>{product.description}</p>
-        <p className="muted" style={{ marginBottom: 32 }}>
-          {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : "Out of stock"}
-        </p>
-        <button className="primary" onClick={addToCart} disabled={product.stock_quantity === 0}>
-          Add to cart
-        </button>
-        {added && <p className="muted" style={{ marginTop: 12 }}>Added to cart.</p>}
+    <div>
+      <nav className="breadcrumb">
+        <Link to="/">Products</Link>
+        {product.category_name && (
+          <>
+            <span className="sep">/</span>
+            <span>{product.category_name}</span>
+          </>
+        )}
+        <span className="sep">/</span>
+        <span className="current">{product.name}</span>
+      </nav>
+
+      <div className="product-detail">
+        <div className="product-detail-image">
+          {product.image_url ? (
+            <img src={product.image_url} alt={product.name} />
+          ) : (
+            <div className="no-image">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                <rect x="3" y="3" width="18" height="18" rx="0" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="M21 15l-5-5L5 21" />
+              </svg>
+              <span>Image coming soon</span>
+            </div>
+          )}
+        </div>
+
+        <div className="product-detail-info">
+          {product.category_name && (
+            <p className="product-detail-eyebrow">{product.category_name}</p>
+          )}
+          <h2>{product.name}</h2>
+          <p className="product-detail-price">
+            {(product.price_minor / 100).toFixed(2)} {product.currency.toUpperCase()}
+          </p>
+
+          <hr className="product-detail-divider" />
+
+          <p className="product-detail-description">{product.description}</p>
+
+          <div className={`stock-indicator ${!inStock ? "out-text" : ""}`}>
+            <span className={`stock-dot ${!inStock ? "out" : ""}`} />
+            {inStock ? `${product.stock_quantity} in stock` : "Out of stock"}
+          </div>
+
+          {inStock && (
+            <div className="qty-selector">
+              <button onClick={() => setQty((q) => Math.max(1, q - 1))}>-</button>
+              <span>{qty}</span>
+              <button onClick={() => setQty((q) => Math.min(product.stock_quantity, q + 1))}>+</button>
+            </div>
+          )}
+
+          <div className="product-detail-actions">
+            <button className="primary" onClick={addToCart} disabled={!inStock}>
+              {inStock ? "Add to cart" : "Out of stock"}
+            </button>
+          </div>
+
+          {added && (
+            <div className="added-banner">
+              <span>Added to your bag</span>
+              <Link to="/cart">View bag</Link>
+            </div>
+          )}
+
+          <div className="product-detail-meta">
+            <span>Complimentary shipping on all orders</span>
+            <span>Returns accepted within 30 days</span>
+          </div>
+        </div>
       </div>
     </div>
   );
