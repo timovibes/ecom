@@ -64,9 +64,15 @@ input:focus, select:focus {
 }
 
 .site-header {
-  border-bottom: none;
-  box-shadow: 0 4px 10px -6px var(--shadow-dark);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 4px 24px rgba(43, 38, 32, 0.08);
   padding: 24px 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
 .site-nav {
@@ -98,9 +104,12 @@ input:focus, select:focus {
 
 .product-thumb {
   aspect-ratio: 1 / 1;
-  background: var(--color-surface);
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
-  box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+  box-shadow: 0 8px 24px rgba(43, 38, 32, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -279,9 +288,12 @@ input:focus, select:focus {
   width: 100%;
   max-width: 380px;
   aspect-ratio: 1 / 1;
-  background: var(--color-surface);
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
-  box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+  box-shadow: 0 8px 24px rgba(43, 38, 32, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -395,10 +407,12 @@ input:focus, select:focus {
 .added-banner {
   margin-top: 16px;
   padding: 12px 14px;
-  background: var(--color-surface);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
   color: var(--color-gold);
   border-radius: 8px;
-  box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -528,9 +542,12 @@ input:focus, select:focus {
 }
 
 .status-message.success {
-  background: var(--color-surface);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
   color: var(--color-gold);
-  box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+  border-radius: 8px;
   text-transform: uppercase;
 }
 
@@ -661,13 +678,15 @@ input:focus, select:focus {
     left: 0;
     height: 100vh;
     width: 280px;
-    background: var(--color-surface);
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border-right: 1px solid var(--glass-border);
     padding: 32px 24px;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     z-index: 100;
     overflow-y: auto;
-    box-shadow: 8px 0 20px var(--shadow-dark);
   }
   .shop-sidebar.open { transform: translateX(0); }
   .sidebar-close { display: block; margin-bottom: 24px; }
