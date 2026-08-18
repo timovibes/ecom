@@ -259,15 +259,6 @@ export default function Home() {
           <p className="muted">No products found.</p>
         )}
 
-        {!loading && !error && browsingAll && (
-          <SectionControls
-            canShowMore={canShowMore}
-            canShowLess={canShowLess}
-            onShowMore={handleShowMore}
-            onShowLess={handleShowLess}
-          />
-        )}
-
         {!loading && !error && browsingAll && visibleSectioned.map((section) => (
           <div key={section.id} className="product-section">
             <div className="product-section-header">
