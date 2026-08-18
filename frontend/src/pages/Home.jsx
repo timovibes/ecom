@@ -43,6 +43,16 @@ function ProductCard({ p }) {
   );
 }
 
+function SectionControls({ canShowMore, canShowLess, onShowMore, onShowLess }) {
+  if (!canShowMore && !canShowLess) return null;
+  return (
+    <div className="section-controls">
+      {canShowMore && <button onClick={onShowMore}>Show more categories</button>}
+      {canShowLess && <button onClick={onShowLess}>Show less</button>}
+    </div>
+  );
+}
+
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -145,6 +155,9 @@ export default function Home() {
     ? categories.find((c) => String(c.id) === String(categoryId))?.name
     : null;
 
+  const handleShowMore = () => setVisibleSections((n) => n + SECTIONS_PER_PAGE);
+  const handleShowLess = () => setVisibleSections(SECTIONS_PER_PAGE);
+
   return (
     <div className="shop">
       {sidebarOpen && (
@@ -230,19 +243,13 @@ export default function Home() {
           <p className="muted">No products found.</p>
         )}
 
-        {!loading && !error && browsingAll && (canShowMore || canShowLess) && (
-          <div className="section-controls">
-            {canShowMore && (
-              <button onClick={() => setVisibleSections((n) => n + SECTIONS_PER_PAGE)}>
-                Show more categories
-              </button>
-            )}
-            {canShowLess && (
-              <button onClick={() => setVisibleSections(SECTIONS_PER_PAGE)}>
-                Show less
-              </button>
-            )}
-          </div>
+        {!loading && !error && browsingAll && (
+          <SectionControls
+            canShowMore={canShowMore}
+            canShowLess={canShowLess}
+            onShowMore={handleShowMore}
+            onShowLess={handleShowLess}
+          />
         )}
 
         {!loading && !error && browsingAll && visibleSectioned.map((section) => (
@@ -255,7 +262,7 @@ export default function Home() {
                 </button>
               )}
             </div>
-            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+            <div className="grid product-grid">
               {section.items.slice(0, SECTION_PREVIEW_SIZE).map((p) => (
                 <ProductCard key={p.id} p={p} />
               ))}
@@ -263,24 +270,18 @@ export default function Home() {
           </div>
         ))}
 
-        {!loading && !error && browsingAll && (canShowMore || canShowLess) && (
-          <div className="section-controls">
-            {canShowMore && (
-              <button onClick={() => setVisibleSections((n) => n + SECTIONS_PER_PAGE)}>
-                Show more categories
-              </button>
-            )}
-            {canShowLess && (
-              <button onClick={() => setVisibleSections(SECTIONS_PER_PAGE)}>
-                Show less
-              </button>
-            )}
-          </div>
+        {!loading && !error && browsingAll && (
+          <SectionControls
+            canShowMore={canShowMore}
+            canShowLess={canShowLess}
+            onShowMore={handleShowMore}
+            onShowLess={handleShowLess}
+          />
         )}
 
         {!loading && !error && !browsingAll && (
           <>
-            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+            <div className="grid product-grid">
               {pageItems.map((p) => (
                 <ProductCard key={p.id} p={p} />
               ))}

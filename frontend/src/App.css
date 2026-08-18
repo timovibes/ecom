@@ -115,6 +115,10 @@ input:focus, select:focus {
   gap: var(--gutter);
 }
 
+.product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
 .card { border: none; background: transparent; }
 
 .product-thumb {
@@ -209,6 +213,8 @@ input:focus, select:focus {
 }
 
 .shop-sidebar { position: sticky; top: 24px; }
+
+.shop-main { min-width: 0; }
 
 .sidebar-section { margin-bottom: 40px; }
 
