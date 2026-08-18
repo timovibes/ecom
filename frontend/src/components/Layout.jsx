@@ -7,7 +7,7 @@ export default function Layout() {
   return (
     <div>
       <header className="site-header">
-        <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="container site-header-inner">
           <Link to="/" className="brand">Aurelian</Link>
           <nav className="site-nav">
             <Link to="/">Products</Link>
@@ -27,11 +27,11 @@ export default function Layout() {
           </nav>
         </div>
       </header>
-      <main className="container" style={{ paddingTop: 64, paddingBottom: 64 }}>
+      <main className="container site-main">
         <Outlet />
       </main>
       <footer className="site-footer">
-        <div className="container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="container site-footer-inner">
           <span>© 2026 AURELIAN. All rights reserved.</span>
           <span>Shipping · Returns · Privacy</span>
         </div>

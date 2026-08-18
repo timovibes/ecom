@@ -179,6 +179,23 @@ input:focus, select:focus {
   color: var(--color-grey);
 }
 
+.site-header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.site-main {
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+
+.site-footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 /* Shop layout (Home.jsx sidebar) */
 .shop {
   display: grid;
