@@ -14,54 +14,58 @@
 
 button {
   cursor: pointer;
-  border: 1px solid var(--color-black);
-  background: transparent;
+  border: none;
+  background: var(--color-surface);
   color: var(--color-black);
   padding: 12px 24px;
   text-transform: uppercase;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.15em;
-  border-radius: 0;
-  transition: background 0.2s ease, color 0.2s ease;
+  border-radius: 10px;
+  box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+  transition: box-shadow 0.2s ease, color 0.2s ease;
 }
 
 button:hover:not(:disabled) {
-  background: var(--color-black);
-  color: var(--color-white);
+  background: var(--color-surface);
+  color: var(--color-gold);
+  box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
 }
 
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 button.primary {
-  background: var(--color-black);
-  color: var(--color-white);
-  border-color: var(--color-black);
+  background: var(--color-surface);
+  color: var(--color-gold);
+  border: none;
+  box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
 }
 
 button.primary:hover:not(:disabled) {
-  background: var(--color-gold);
-  border-color: var(--color-gold);
+  box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+  color: var(--color-gold);
 }
 
 input, select {
   border: none;
-  border-bottom: 1px solid var(--color-outline);
-  background: transparent;
-  padding: 10px 4px;
-  border-radius: 0;
+  background: var(--color-surface);
+  padding: 12px 16px;
+  border-radius: 8px;
   color: var(--color-on-surface);
   font-size: 14px;
   width: 100%;
+  box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
 }
 
 input:focus, select:focus {
   outline: none;
-  border-bottom: 2px solid var(--color-black);
+  box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
 }
 
 .site-header {
-  border-bottom: 1px solid var(--color-black);
+  border-bottom: none;
+  box-shadow: 0 4px 10px -6px var(--shadow-dark);
   padding: 24px 0;
 }
 
@@ -79,9 +83,11 @@ input:focus, select:focus {
   letter-spacing: 0.12em;
   background: none;
   color: var(--color-on-surface);
+  box-shadow: none;
+  border-radius: 0;
 }
 
-.site-nav button:hover { background: none; color: var(--color-gold); }
+.site-nav button:hover { background: none; box-shadow: none; color: var(--color-gold); }
 
 .grid {
   display: grid;
@@ -92,7 +98,9 @@ input:focus, select:focus {
 
 .product-thumb {
   aspect-ratio: 1 / 1;
-  background: var(--color-surface-container);
+  background: var(--color-surface);
+  border-radius: 12px;
+  box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -117,12 +125,14 @@ input:focus, select:focus {
 
 .badge {
   display: inline-block;
-  background: var(--color-black);
-  color: var(--color-white);
+  background: var(--color-surface);
+  color: var(--color-gold);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 4px 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
 }
 
 .product-card-badge { position: absolute; top: 12px; left: 12px; }
@@ -153,7 +163,7 @@ input:focus, select:focus {
 }
 
 .site-footer {
-  border-top: 1px solid var(--color-black);
+  border-top: 1px solid var(--color-outline-variant);
   padding: 32px 0;
   margin-top: 120px;
   font-size: 12px;
@@ -192,6 +202,8 @@ input:focus, select:focus {
   width: 100%;
   border: none;
   background: none;
+  box-shadow: none;
+  border-radius: 0;
   padding: 8px 0;
   font-size: 14px;
   font-weight: 300;
@@ -201,7 +213,7 @@ input:focus, select:focus {
   text-align: left;
 }
 
-.category-item button:hover { background: none; color: var(--color-black); }
+.category-item button:hover { background: none; box-shadow: none; color: var(--color-black); }
 
 .category-item.active button {
   color: var(--color-black);
@@ -212,10 +224,12 @@ input:focus, select:focus {
 .category-item-count { color: var(--color-outline); font-size: 12px; }
 
 .clear-filters {
-  border: 1px solid var(--color-outline-variant);
-  background: none;
+  border: none;
+  background: var(--color-surface);
   color: var(--color-grey);
   width: 100%;
+  border-radius: 8px;
+  box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
 }
 
 .sidebar-close, .mobile-filter-toggle { display: none; }
@@ -265,14 +279,16 @@ input:focus, select:focus {
   width: 100%;
   max-width: 380px;
   aspect-ratio: 1 / 1;
-  background: var(--color-surface-container);
+  background: var(--color-surface);
+  border-radius: 12px;
+  box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
 }
 
-.product-detail-image img { width: 100%; height: 100%; object-fit: cover; }
+.product-detail-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
 
 .product-detail-image .no-image {
   display: flex;
@@ -345,13 +361,18 @@ input:focus, select:focus {
 .qty-selector {
   display: flex;
   align-items: center;
-  border: 1px solid var(--color-black);
+  border: none;
+  border-radius: 10px;
+  box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
   width: fit-content;
   margin-bottom: 20px;
 }
 
 .qty-selector button {
+  box-shadow: none;
+  border-radius: 0;
   border: none;
+  background: transparent;
   padding: 8px 16px;
   font-size: 13px;
 }
@@ -374,8 +395,10 @@ input:focus, select:focus {
 .added-banner {
   margin-top: 16px;
   padding: 12px 14px;
-  background: var(--color-black);
-  color: var(--color-white);
+  background: var(--color-surface);
+  color: var(--color-gold);
+  border-radius: 8px;
+  box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -384,7 +407,7 @@ input:focus, select:focus {
   align-items: center;
 }
 
-.added-banner a { text-decoration: underline; color: var(--color-white); }
+.added-banner a { text-decoration: underline; color: var(--color-gold); }
 
 .product-detail-meta {
   margin-top: 24px;
@@ -405,7 +428,7 @@ input:focus, select:focus {
 
 /* Cart */
 .cart-list {
-  border-top: 1px solid var(--color-black);
+  border-top: 1px solid var(--color-outline-variant);
 }
 
 .cart-item {
@@ -443,6 +466,8 @@ input:focus, select:focus {
   border: none;
   padding: 0;
   background: none;
+  box-shadow: none;
+  border-radius: 0;
   color: var(--color-grey);
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -450,6 +475,7 @@ input:focus, select:focus {
 
 .remove-link:hover {
   background: none;
+  box-shadow: none;
   color: var(--color-error);
 }
 
@@ -487,7 +513,7 @@ input:focus, select:focus {
 }
 
 .checkout-summary {
-  border-top: 1px solid var(--color-black);
+  border-top: 1px solid var(--color-outline-variant);
   border-bottom: 1px solid var(--color-outline-variant);
   padding: 24px 0;
   margin-bottom: 32px;
@@ -498,11 +524,13 @@ input:focus, select:focus {
   margin-bottom: 24px;
   font-size: 13px;
   letter-spacing: 0.05em;
+  border-radius: 8px;
 }
 
 .status-message.success {
-  background: var(--color-black);
-  color: var(--color-white);
+  background: var(--color-surface);
+  color: var(--color-gold);
+  box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
   text-transform: uppercase;
 }
 
@@ -541,7 +569,7 @@ input:focus, select:focus {
 
 /* Orders */
 .order-list {
-  border-top: 1px solid var(--color-black);
+  border-top: 1px solid var(--color-outline-variant);
 }
 
 .order-row {
@@ -562,27 +590,29 @@ input:focus, select:focus {
   color: var(--color-black);
 }
 
-.badge.status-paid { background: var(--color-black); }
-.badge.status-pending { background: var(--color-grey); }
-.badge.status-declined { background: var(--color-error); }
+.badge.status-paid { background: var(--color-surface); color: var(--color-gold); }
+.badge.status-pending { background: var(--color-surface); color: var(--color-grey); }
+.badge.status-declined { background: var(--color-surface); color: var(--color-error); }
 
 /* Admin */
 .admin-tabs {
   display: flex;
   gap: 0;
   margin-bottom: 40px;
-  border-bottom: 1px solid var(--color-black);
+  border-bottom: 1px solid var(--color-outline-variant);
 }
 
 .admin-tabs button {
   border: none;
-  border-bottom: 2px solid transparent;
   background: none;
+  box-shadow: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
   padding: 12px 24px 12px 0;
   margin-right: 24px;
 }
 
-.admin-tabs button:hover { background: none; color: var(--color-gold); }
+.admin-tabs button:hover { background: none; box-shadow: none; color: var(--color-gold); }
 
 .admin-tabs button.active {
   border-bottom: 2px solid var(--color-black);
@@ -613,11 +643,13 @@ input:focus, select:focus {
   border: none;
   padding: 0;
   background: none;
+  box-shadow: none;
+  border-radius: 0;
   color: var(--color-grey);
   font-size: 11px;
 }
 
-.admin-row-delete:hover { background: none; color: var(--color-error); }
+.admin-row-delete:hover { background: none; box-shadow: none; color: var(--color-error); }
 
 
 /* Mobile */
@@ -629,13 +661,13 @@ input:focus, select:focus {
     left: 0;
     height: 100vh;
     width: 280px;
-    background: var(--color-white);
+    background: var(--color-surface);
     padding: 32px 24px;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     z-index: 100;
     overflow-y: auto;
-    border-right: 1px solid var(--color-black);
+    box-shadow: 8px 0 20px var(--shadow-dark);
   }
   .shop-sidebar.open { transform: translateX(0); }
   .sidebar-close { display: block; margin-bottom: 24px; }
