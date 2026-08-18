@@ -145,10 +145,11 @@ export default function Home() {
     setSidebarOpen(false);
   };
 
-  const clearFilters = () => {
+  const clearSearch = () => setSearch("");
+  const clearCategory = () => setCategoryId("");
+  const clearAll = () => {
     setSearch("");
     setCategoryId("");
-    setSidebarOpen(false);
   };
 
   const activeCategoryName = categoryId
@@ -157,6 +158,8 @@ export default function Home() {
 
   const handleShowMore = () => setVisibleSections((n) => n + SECTIONS_PER_PAGE);
   const handleShowLess = () => setVisibleSections(SECTIONS_PER_PAGE);
+
+  const activeFilterCount = (search ? 1 : 0) + (categoryId ? 1 : 0);
 
   return (
     <div className="shop">
@@ -202,23 +205,6 @@ export default function Home() {
             ))}
           </ul>
         </div>
-
-        {!browsingAll && (
-          <div className="sidebar-section">
-            <h2 className="sidebar-heading">Sort by</h2>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {hasActiveFilters && (
-          <button className="clear-filters" onClick={clearFilters}>
-            Clear all filters
-          </button>
-        )}
       </aside>
 
       <div className="shop-main">
@@ -231,11 +217,41 @@ export default function Home() {
               ? "Loading products..."
               : browsingAll
                 ? `${products.length} product${products.length === 1 ? "" : "s"}`
-                : `${sortedFlat.length} result${sortedFlat.length === 1 ? "" : "s"}${
-                    activeCategoryName ? ` in ${activeCategoryName}` : ""
-                  }${search ? ` for "${search}"` : ""}`}
+                : `${sortedFlat.length} result${sortedFlat.length === 1 ? "" : "s"}`}
           </span>
+          {!browsingAll && (
+            <select
+              className="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              aria-label="Sort by"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          )}
         </div>
+
+        {hasActiveFilters && (
+          <div className="filter-chips">
+            {activeCategoryName && (
+              <button className="filter-chip" onClick={clearCategory}>
+                {activeCategoryName} <span className="filter-chip-x">×</span>
+              </button>
+            )}
+            {search && (
+              <button className="filter-chip" onClick={clearSearch}>
+                "{search}" <span className="filter-chip-x">×</span>
+              </button>
+            )}
+            {activeFilterCount > 1 && (
+              <button className="filter-chip filter-chip-clear-all" onClick={clearAll}>
+                Clear all
+              </button>
+            )}
+          </div>
+        )}
 
         {error && <p className="error">{error}</p>}
 
