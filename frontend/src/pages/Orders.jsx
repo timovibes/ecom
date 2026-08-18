@@ -13,7 +13,7 @@ export default function Orders() {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 32 }}>Order History</h2>
+      <h2 className="page-heading">Order History</h2>
       {orders.length === 0 && <p className="muted">No orders yet.</p>}
 
       {orders.length > 0 && (
@@ -24,11 +24,11 @@ export default function Orders() {
                 <span className="order-row-id">Order #{o.id}</span>
                 <span className={`badge status-${o.status}`}>{o.status.toUpperCase()}</span>
               </div>
-              <p className="price" style={{ marginBottom: 4 }}>
+              <p className="price order-row-price">
                 {(o.total_amount_minor / 100).toFixed(2)} {o.currency.toUpperCase()}
               </p>
               <p className="muted">{new Date(o.created_at).toLocaleString()}</p>
-              {o.payment?.failure_reason && <p className="error" style={{ marginTop: 8 }}>{o.payment.failure_reason}</p>}
+              {o.payment?.failure_reason && <p className="error order-row-failure">{o.payment.failure_reason}</p>}
             </div>
           ))}
         </div>

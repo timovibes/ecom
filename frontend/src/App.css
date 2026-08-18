@@ -631,6 +631,14 @@ input:focus, select:focus {
 .auth-form button.primary {
   margin-top: 8px;
 }
+/*has to do with orders i think*/
+.order-row-price {
+  margin-bottom: 4px;
+}
+
+.order-row-failure {
+  margin-top: 8px;
+}
 
 /* Orders */
 .order-list {
