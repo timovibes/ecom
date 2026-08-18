@@ -60,7 +60,7 @@ export default function Admin() {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 32 }}>Admin</h2>
+      <h2 className="page-heading">Admin</h2>
       <div className="admin-tabs">
         <button className={tab === "products" ? "active" : ""} onClick={() => setTab("products")}>Products</button>
         <button className={tab === "categories" ? "active" : ""} onClick={() => setTab("categories")}>Categories</button>

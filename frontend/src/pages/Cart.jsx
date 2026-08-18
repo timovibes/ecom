@@ -45,7 +45,7 @@ export default function Cart() {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 32 }}>Shopping Bag</h2>
+      <h2 className="page-heading">Shopping Bag</h2>
       {cart.items.length === 0 && <p className="muted">Your bag is empty.</p>}
 
       {cart.items.length > 0 && (
