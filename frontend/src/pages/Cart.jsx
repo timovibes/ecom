@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import client from "../api/client";
 
 export default function Cart() {
@@ -46,7 +46,13 @@ export default function Cart() {
   return (
     <div>
       <h2 className="page-heading">Shopping Bag</h2>
-      {cart.items.length === 0 && <p className="muted">Your bag is empty.</p>}
+
+      {cart.items.length === 0 && (
+        <div className="empty-state">
+          <p className="empty-state-message">Your bag is empty.</p>
+          <Link to="/" className="primary">Browse products</Link>
+        </div>
+      )}
 
       {cart.items.length > 0 && (
         <div className="cart-list">

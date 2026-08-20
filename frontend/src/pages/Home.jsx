@@ -5,6 +5,7 @@ import client from "../api/client";
 const PAGE_SIZE = 12;
 const SECTION_PREVIEW_SIZE = 8;
 const SECTIONS_PER_PAGE = 2;
+const SKELETON_COUNT = 8;
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest" },
@@ -43,6 +44,16 @@ function ProductCard({ p }) {
         <span className="price-currency">{p.currency.toUpperCase()}</span>
       </p>
     </Link>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="card skeleton-card">
+      <div className="skeleton-thumb" />
+      <div className="skeleton-line skeleton-line-name" />
+      <div className="skeleton-line skeleton-line-price" />
+    </div>
   );
 }
 
@@ -222,7 +233,7 @@ export default function Home() {
                 ? `${products.length} product${products.length === 1 ? "" : "s"}`
                 : `${sortedFlat.length} result${sortedFlat.length === 1 ? "" : "s"}`}
           </span>
-          {!browsingAll && (
+          {!loading && !browsingAll && (
             <select
               className="sort-select"
               value={sortBy}
@@ -236,7 +247,7 @@ export default function Home() {
           )}
         </div>
 
-        {hasActiveFilters && (
+        {!loading && hasActiveFilters && (
           <div className="filter-chips">
             {activeCategoryName && (
               <button className="filter-chip" onClick={clearCategory}>
@@ -258,8 +269,23 @@ export default function Home() {
 
         {error && <p className="error">{error}</p>}
 
+        {loading && (
+          <div className="grid product-grid">
+            {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        )}
+
         {!loading && !error && products.length === 0 && (
-          <p className="muted">No products found.</p>
+          <div className="empty-state">
+            <p className="empty-state-message">
+              {hasActiveFilters ? "No products match your filters." : "No products found."}
+            </p>
+            {hasActiveFilters && (
+              <button className="primary" onClick={clearAll}>Clear filters</button>
+            )}
+          </div>
         )}
 
         {!loading && !error && browsingAll && visibleSectioned.map((section) => (
@@ -289,7 +315,7 @@ export default function Home() {
           />
         )}
 
-        {!loading && !error && !browsingAll && (
+        {!loading && !error && !browsingAll && products.length > 0 && (
           <>
             <div className="grid product-grid">
               {pageItems.map((p) => (
