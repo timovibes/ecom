@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
@@ -11,6 +11,10 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // If we arrived via a product card, this brings you back to the exact filtered/sorted view.
+  const backTo = location.state?.from || "/";
 
   useEffect(() => {
     client.get(`/api/v1/products/${id}`)
@@ -39,7 +43,7 @@ export default function ProductDetail() {
   return (
     <div>
       <nav className="breadcrumb">
-        <Link to="/">Products</Link>
+        <Link to={backTo}>Products</Link>
         {product.category_name && (
           <>
             <span className="sep">/</span>
@@ -86,9 +90,19 @@ export default function ProductDetail() {
 
           {inStock && (
             <div className="qty-selector">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))}>-</button>
+              <button
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                aria-label={`Decrease quantity, currently ${qty}`}
+              >
+                -
+              </button>
               <span>{qty}</span>
-              <button onClick={() => setQty((q) => Math.min(product.stock_quantity, q + 1))}>+</button>
+              <button
+                onClick={() => setQty((q) => Math.min(product.stock_quantity, q + 1))}
+                aria-label={`Increase quantity, currently ${qty}`}
+              >
+                +
+              </button>
             </div>
           )}
 

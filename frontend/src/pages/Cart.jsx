@@ -64,11 +64,27 @@ export default function Cart() {
               </div>
               <div className="cart-item-controls">
                 <div className="qty-control">
-                  <button onClick={() => updateQty(item.id, item.quantity - 1)}>-</button>
+                  <button
+                    onClick={() => updateQty(item.id, item.quantity - 1)}
+                    aria-label={`Decrease quantity of ${item.product.name}, currently ${item.quantity}`}
+                  >
+                    -
+                  </button>
                   <span>{item.quantity}</span>
-                  <button onClick={() => updateQty(item.id, item.quantity + 1)}>+</button>
+                  <button
+                    onClick={() => updateQty(item.id, item.quantity + 1)}
+                    aria-label={`Increase quantity of ${item.product.name}, currently ${item.quantity}`}
+                  >
+                    +
+                  </button>
                 </div>
-                <button className="remove-link" onClick={() => removeItem(item.id)}>Remove</button>
+                <button
+                  className="remove-link"
+                  onClick={() => removeItem(item.id)}
+                  aria-label={`Remove ${item.product.name} from bag`}
+                >
+                  Remove
+                </button>
               </div>
             </div>
           ))}

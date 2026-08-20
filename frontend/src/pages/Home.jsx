@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import client from "../api/client";
 
 const PAGE_SIZE = 12;
@@ -29,9 +29,9 @@ function sortProducts(products, sortBy) {
   }
 }
 
-function ProductCard({ p }) {
+function ProductCard({ p, backTo }) {
   return (
-    <Link to={`/products/${p.id}`} className="card product-card">
+    <Link to={`/products/${p.id}`} state={{ from: backTo }} className="card product-card">
       <div className="product-thumb">
         {p.image_url
           ? <img src={p.image_url} alt={p.name} loading="lazy" />
@@ -68,16 +68,34 @@ function SectionControls({ canShowMore, canShowLess, onShowMore, onShowLess }) {
 }
 
 export default function Home() {
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const search = searchParams.get("q") || "";
+  const categoryId = searchParams.get("category") || "";
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [search, setSearch] = useState("");
-  const [categoryId, setCategoryId] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [visibleSections, setVisibleSections] = useState(SECTIONS_PER_PAGE);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  function updateFilterParams(updates) {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      for (const [key, value] of Object.entries(updates)) {
+        if (value) next.set(key, value);
+        else next.delete(key);
+      }
+      return next;
+    }, { replace: true });
+  }
+
+  const setSearch = (value) => updateFilterParams({ q: value });
+  const setCategoryId = (value) => updateFilterParams({ category: value });
 
   useEffect(() => {
     client.get("/api/v1/categories/")
@@ -161,10 +179,7 @@ export default function Home() {
 
   const clearSearch = () => setSearch("");
   const clearCategory = () => setCategoryId("");
-  const clearAll = () => {
-    setSearch("");
-    setCategoryId("");
-  };
+  const clearAll = () => updateFilterParams({ q: "", category: "" });
 
   const activeCategoryName = categoryId
     ? categories.find((c) => String(c.id) === String(categoryId))?.name
@@ -174,6 +189,9 @@ export default function Home() {
   const handleShowLess = () => setVisibleSections(SECTIONS_PER_PAGE);
 
   const activeFilterCount = (search ? 1 : 0) + (categoryId ? 1 : 0);
+
+  // Passed to product links so their detail-page breadcrumb can return to this exact view.
+  const backTo = location.pathname + location.search;
 
   return (
     <div className="shop">
@@ -300,7 +318,7 @@ export default function Home() {
             </div>
             <div className="grid product-grid">
               {section.items.slice(0, SECTION_PREVIEW_SIZE).map((p) => (
-                <ProductCard key={p.id} p={p} />
+                <ProductCard key={p.id} p={p} backTo={backTo} />
               ))}
             </div>
           </div>
@@ -319,7 +337,7 @@ export default function Home() {
           <>
             <div className="grid product-grid">
               {pageItems.map((p) => (
-                <ProductCard key={p.id} p={p} />
+                <ProductCard key={p.id} p={p} backTo={backTo} />
               ))}
             </div>
             {totalPages > 1 && (
