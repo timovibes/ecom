@@ -38,7 +38,10 @@ function ProductCard({ p }) {
         {p.stock_quantity === 0 && <span className="badge product-card-badge">OUT OF STOCK</span>}
       </div>
       <h3 className="product-card-name">{p.name}</h3>
-      <p className="price">{(p.price_minor / 100).toFixed(2)} {p.currency.toUpperCase()}</p>
+      <p className="price">
+        {(p.price_minor / 100).toFixed(2)}
+        <span className="price-currency">{p.currency.toUpperCase()}</span>
+      </p>
     </Link>
   );
 }
