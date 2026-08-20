@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import client from "../api/client";
 
+const ROWS_PER_PAGE = 10;
+
 function ConfirmDialog({ message, onConfirm, onCancel }) {
   return (
     <div className="confirm-backdrop" onClick={onCancel}>
@@ -11,6 +13,21 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
           <button className="confirm-danger" onClick={onConfirm}>Delete</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AdminPagination({ page, totalPages, onPageChange }) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="pagination">
+      <button onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page === 1}>
+        Prev
+      </button>
+      <span className="muted">Page {page} of {totalPages}</span>
+      <button onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page === totalPages}>
+        Next
+      </button>
     </div>
   );
 }
@@ -26,6 +43,10 @@ export default function Admin() {
   const [newCategory, setNewCategory] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null); // { id, name } | null
 
+  const [productsPage, setProductsPage] = useState(1);
+  const [categoriesPage, setCategoriesPage] = useState(1);
+  const [ordersPage, setOrdersPage] = useState(1);
+
   function loadAll() {
     client.get("/api/v1/products/").then((res) => setProducts(res.data)).catch(() => {});
     client.get("/api/v1/categories/").then((res) => setCategories(res.data)).catch(() => {});
@@ -33,6 +54,22 @@ export default function Admin() {
   }
 
   useEffect(loadAll, []);
+
+  // Keep each tab's page in range if the underlying list shrinks (e.g. after a delete).
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(products.length / ROWS_PER_PAGE));
+    setProductsPage((p) => Math.min(p, maxPage));
+  }, [products.length]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(categories.length / ROWS_PER_PAGE));
+    setCategoriesPage((p) => Math.min(p, maxPage));
+  }, [categories.length]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(orders.length / ROWS_PER_PAGE));
+    setOrdersPage((p) => Math.min(p, maxPage));
+  }, [orders.length]);
 
   async function createProduct(e) {
     e.preventDefault();
@@ -44,6 +81,7 @@ export default function Admin() {
         category_id: newProduct.category_id ? Number(newProduct.category_id) : null,
       });
       setNewProduct({ name: "", price_minor: "", stock_quantity: "", category_id: "" });
+      setProductsPage(1);
       loadAll();
     } catch {
       setError("Could not create product");
@@ -55,6 +93,7 @@ export default function Admin() {
     try {
       await client.post("/api/v1/categories/", { name: newCategory });
       setNewCategory("");
+      setCategoriesPage(1);
       loadAll();
     } catch {
       setError("Could not create category");
@@ -82,6 +121,15 @@ export default function Admin() {
   }
 
   if (error) return <p className="error">{error}</p>;
+
+  const productsTotalPages = Math.max(1, Math.ceil(products.length / ROWS_PER_PAGE));
+  const productsPageItems = products.slice((productsPage - 1) * ROWS_PER_PAGE, productsPage * ROWS_PER_PAGE);
+
+  const categoriesTotalPages = Math.max(1, Math.ceil(categories.length / ROWS_PER_PAGE));
+  const categoriesPageItems = categories.slice((categoriesPage - 1) * ROWS_PER_PAGE, categoriesPage * ROWS_PER_PAGE);
+
+  const ordersTotalPages = Math.max(1, Math.ceil(orders.length / ROWS_PER_PAGE));
+  const ordersPageItems = orders.slice((ordersPage - 1) * ROWS_PER_PAGE, ordersPage * ROWS_PER_PAGE);
 
   return (
     <div>
@@ -116,12 +164,13 @@ export default function Admin() {
             </div>
             <button className="primary" type="submit">Add product</button>
           </form>
-          {products.map((p) => (
+          {productsPageItems.map((p) => (
             <div key={p.id} className="admin-row">
               <span>{p.name} — {(p.price_minor / 100).toFixed(2)} {p.currency.toUpperCase()} — stock: {p.stock_quantity}</span>
               <button className="admin-row-delete" onClick={() => requestDeleteProduct(p)}>Delete</button>
             </div>
           ))}
+          <AdminPagination page={productsPage} totalPages={productsTotalPages} onPageChange={setProductsPage} />
         </div>
       )}
 
@@ -134,13 +183,14 @@ export default function Admin() {
             </div>
             <button className="primary" type="submit">Add category</button>
           </form>
-          {categories.map((c) => <div key={c.id} className="admin-row"><span>{c.name}</span></div>)}
+          {categoriesPageItems.map((c) => <div key={c.id} className="admin-row"><span>{c.name}</span></div>)}
+          <AdminPagination page={categoriesPage} totalPages={categoriesTotalPages} onPageChange={setCategoriesPage} />
         </div>
       )}
 
       {tab === "orders" && (
         <div>
-          {orders.map((o) => (
+          {ordersPageItems.map((o) => (
             <div key={o.id} className="admin-row">
               <span>Order #{o.id} — {(o.total_amount_minor / 100).toFixed(2)} {o.currency.toUpperCase()}</span>
               <select value={o.status} onChange={(e) => updateOrderStatus(o.id, e.target.value)}>
@@ -152,6 +202,7 @@ export default function Admin() {
               </select>
             </div>
           ))}
+          <AdminPagination page={ordersPage} totalPages={ordersTotalPages} onPageChange={setOrdersPage} />
         </div>
       )}
 
