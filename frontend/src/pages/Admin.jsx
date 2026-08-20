@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
 import client from "../api/client";
 
+function ConfirmDialog({ message, onConfirm, onCancel }) {
+  return (
+    <div className="confirm-backdrop" onClick={onCancel}>
+      <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
+        <p className="confirm-message">{message}</p>
+        <div className="confirm-actions">
+          <button onClick={onCancel}>Cancel</button>
+          <button className="confirm-danger" onClick={onConfirm}>Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   const [tab, setTab] = useState("products");
   const [products, setProducts] = useState([]);
@@ -10,6 +24,7 @@ export default function Admin() {
 
   const [newProduct, setNewProduct] = useState({ name: "", price_minor: "", stock_quantity: "", category_id: "" });
   const [newCategory, setNewCategory] = useState("");
+  const [pendingDelete, setPendingDelete] = useState(null); // { id, name } | null
 
   function loadAll() {
     client.get("/api/v1/products/").then((res) => setProducts(res.data)).catch(() => {});
@@ -46,9 +61,19 @@ export default function Admin() {
     }
   }
 
-  async function deleteProduct(id) {
-    await client.delete(`/api/v1/products/${id}`);
+  function requestDeleteProduct(product) {
+    setPendingDelete({ id: product.id, name: product.name });
+  }
+
+  async function confirmDeleteProduct() {
+    if (!pendingDelete) return;
+    await client.delete(`/api/v1/products/${pendingDelete.id}`);
+    setPendingDelete(null);
     loadAll();
+  }
+
+  function cancelDelete() {
+    setPendingDelete(null);
   }
 
   async function updateOrderStatus(id, status) {
@@ -94,7 +119,7 @@ export default function Admin() {
           {products.map((p) => (
             <div key={p.id} className="admin-row">
               <span>{p.name} — {(p.price_minor / 100).toFixed(2)} {p.currency.toUpperCase()} — stock: {p.stock_quantity}</span>
-              <button className="admin-row-delete" onClick={() => deleteProduct(p.id)}>Delete</button>
+              <button className="admin-row-delete" onClick={() => requestDeleteProduct(p)}>Delete</button>
             </div>
           ))}
         </div>
@@ -128,6 +153,14 @@ export default function Admin() {
             </div>
           ))}
         </div>
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          message={`Delete "${pendingDelete.name}"? This can't be undone.`}
+          onConfirm={confirmDeleteProduct}
+          onCancel={cancelDelete}
+        />
       )}
     </div>
   );
