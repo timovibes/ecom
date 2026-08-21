@@ -1,8 +1,14 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate("/");
+  }
 
   return (
     <div>
@@ -16,7 +22,7 @@ export default function Layout() {
               <>
                 <Link to="/orders">Orders</Link>
                 {user.is_admin && <Link to="/admin">Admin</Link>}
-                <button onClick={logout}>Logout</button>
+                <button onClick={handleLogout}>Logout</button>
               </>
             ) : (
               <>
