@@ -10,7 +10,7 @@ export default function Layout() {
         <div className="container site-header-inner">
           <Link to="/" className="brand">Aurelian</Link>
           <nav className="site-nav">
-            <Link to="/">Products</Link>
+            <Link to="/shop">Products</Link>
             <Link to="/cart">Cart</Link>
             {user ? (
               <>
