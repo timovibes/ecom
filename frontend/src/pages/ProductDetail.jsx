@@ -14,7 +14,7 @@ export default function ProductDetail() {
   const location = useLocation();
 
   // If we arrived via a product card, this brings you back to the exact filtered/sorted view.
-  const backTo = location.state?.from || "/";
+  const backTo = location.state?.from || "/shop";
 
   useEffect(() => {
     client.get(`/api/v1/products/${id}`)
