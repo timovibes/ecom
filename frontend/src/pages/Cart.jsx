@@ -50,7 +50,7 @@ export default function Cart() {
       {cart.items.length === 0 && (
         <div className="empty-state">
           <p className="empty-state-message">Your bag is empty.</p>
-          <Link to="/" className="primary">Browse products</Link>
+          <Link to="/shop" className="primary">Browse products</Link>
         </div>
       )}
 
