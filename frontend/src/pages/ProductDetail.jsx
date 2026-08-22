@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -10,6 +11,7 @@ export default function ProductDetail() {
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
   const { user } = useAuth();
+  const { refreshCart } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -30,6 +32,7 @@ export default function ProductDetail() {
     try {
       await client.post("/api/v1/cart/items", { product_id: Number(id), quantity: qty });
       setAdded(true);
+      refreshCart();
     } catch {
       setError("Could not add to cart");
     }
