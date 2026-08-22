@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import client from "../api/client";
+import { useCart } from "../context/CartContext";
 
 export default function Cart() {
   const [cart, setCart] = useState(null);
   const [error, setError] = useState("");
   const [checkingOut, setCheckingOut] = useState(false);
   const navigate = useNavigate();
+  const { refreshCart } = useCart();
 
   function loadCart() {
     client.get("/api/v1/cart/").then((res) => setCart(res.data)).catch(() => setError("Could not load cart"));
@@ -18,11 +20,13 @@ export default function Cart() {
     if (quantity < 1) return;
     await client.patch(`/api/v1/cart/items/${itemId}`, { quantity });
     loadCart();
+    refreshCart();
   }
 
   async function removeItem(itemId) {
     await client.delete(`/api/v1/cart/items/${itemId}`);
     loadCart();
+    refreshCart();
   }
 
   async function checkout() {
