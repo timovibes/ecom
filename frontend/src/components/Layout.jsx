@@ -1,9 +1,16 @@
+import { useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const { count, refreshCart } = useCart();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    refreshCart();
+  }, [user, refreshCart]);
 
   function handleLogout() {
     logout();
@@ -17,7 +24,10 @@ export default function Layout() {
           <Link to="/" className="brand">Aurelian</Link>
           <nav className="site-nav">
             <Link to="/shop">Products</Link>
-            <Link to="/cart">Cart</Link>
+            <Link to="/cart" className="cart-link">
+              Cart
+              {count > 0 && <span className="cart-count">{count}</span>}
+            </Link>
             {user ? (
               <>
                 <Link to="/orders">Orders</Link>
