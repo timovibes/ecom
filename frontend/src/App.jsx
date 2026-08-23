@@ -12,6 +12,7 @@ import Signup from "./pages/Signup";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import Admin from "./pages/Admin";
+import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
                 path="/admin"
                 element={<ProtectedRoute><Admin /></ProtectedRoute>}
               />
+              <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
         </CartProvider>
