@@ -35,6 +35,7 @@ export default function Cart() {
     setError("");
     try {
       const res = await client.post("/api/v1/checkout/");
+      refreshCart();
       navigate(`/checkout/${res.data.order_id}`, { state: res.data });
     } catch (err) {
       setError(err.response?.data?.detail || "Checkout failed");
