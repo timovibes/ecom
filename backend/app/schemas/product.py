@@ -39,6 +39,8 @@ class ProductOut(BaseModel):
     image_url: Optional[str] = None
     category_id: Optional[int] = None
     created_at: datetime
+    average_rating: Optional[float] = None
+    review_count: int = 0
 
     class Config:
         from_attributes = True
