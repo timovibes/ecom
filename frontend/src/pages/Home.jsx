@@ -39,6 +39,11 @@ function ProductCard({ p, backTo }) {
         {p.stock_quantity === 0 && <span className="badge product-card-badge">OUT OF STOCK</span>}
       </div>
       <h3 className="product-card-name">{p.name}</h3>
+      {p.review_count > 0 && (
+        <p className="product-card-rating">
+          <span className="star-filled">★</span> {p.average_rating} ({p.review_count})
+        </p>
+      )}
       <p className="price">
         {(p.price_minor / 100).toFixed(2)}
         <span className="price-currency">{p.currency.toUpperCase()}</span>
