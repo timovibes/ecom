@@ -26,3 +26,14 @@ class Product(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     category = relationship("Category", back_populates="products")
+    reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan")
+
+    @property
+    def review_count(self):
+        return len(self.reviews)
+
+    @property
+    def average_rating(self):
+        if not self.reviews:
+            return None
+        return round(sum(r.rating for r in self.reviews) / len(self.reviews), 1)
