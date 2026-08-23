@@ -4,6 +4,17 @@ import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 
+function Stars({ value, size = 14 }) {
+  const rounded = Math.round(value || 0);
+  return (
+    <span className="stars" style={{ fontSize: size }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={n <= rounded ? "star-filled" : "star-empty"}>★</span>
+      ))}
+    </span>
+  );
+}
+
 export default function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
@@ -15,6 +26,12 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
   // If we arrived via a product card, this brings you back to the exact filtered/sorted view.
   const backTo = location.state?.from || "/shop";
 
@@ -23,6 +40,16 @@ export default function ProductDetail() {
       .then((res) => setProduct(res.data))
       .catch(() => setError("Product not found"));
   }, [id]);
+
+  function loadReviews() {
+    setReviewsLoading(true);
+    client.get(`/api/v1/products/${id}/reviews/`)
+      .then((res) => setReviews(res.data))
+      .catch(() => setReviews([]))
+      .finally(() => setReviewsLoading(false));
+  }
+
+  useEffect(loadReviews, [id]);
 
   async function addToCart() {
     if (!user) {
@@ -35,6 +62,28 @@ export default function ProductDetail() {
       refreshCart();
     } catch {
       setError("Could not add to cart");
+    }
+  }
+
+  async function submitReview(e) {
+    e.preventDefault();
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    setReviewSubmitting(true);
+    setReviewError("");
+    try {
+      await client.post(`/api/v1/products/${id}/reviews/`, {
+        rating: Number(reviewForm.rating),
+        comment: reviewForm.comment || null,
+      });
+      setReviewForm({ rating: 5, comment: "" });
+      loadReviews();
+    } catch (err) {
+      setReviewError(err.response?.data?.detail || "Could not submit review");
+    } finally {
+      setReviewSubmitting(false);
     }
   }
 
@@ -78,6 +127,16 @@ export default function ProductDetail() {
             <p className="product-detail-eyebrow">{product.category_name}</p>
           )}
           <h2>{product.name}</h2>
+
+          {product.review_count > 0 && (
+            <div className="product-detail-rating">
+              <Stars value={product.average_rating} size={15} />
+              <span className="muted">
+                {product.average_rating} ({product.review_count} review{product.review_count === 1 ? "" : "s"})
+              </span>
+            </div>
+          )}
+
           <p className="product-detail-price">
             {(product.price_minor / 100).toFixed(2)} {product.currency.toUpperCase()}
           </p>
@@ -128,6 +187,58 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      <section className="reviews-section">
+        <h3 className="reviews-heading">Reviews</h3>
+
+        {reviewsLoading && <p className="muted">Loading reviews...</p>}
+
+        {!reviewsLoading && reviews.length === 0 && (
+          <p className="muted">No reviews yet — be the first to share your thoughts.</p>
+        )}
+
+        {!reviewsLoading && reviews.length > 0 && (
+          <div className="review-list">
+            {reviews.map((r) => (
+              <div key={r.id} className="review-item">
+                <div className="review-item-header">
+                  <Stars value={r.rating} />
+                  <span className="review-item-author">{r.user_name}</span>
+                  <span className="muted">{new Date(r.created_at).toLocaleDateString()}</span>
+                </div>
+                {r.comment && <p className="review-item-comment">{r.comment}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={submitReview} className="review-form">
+          <h4 className="review-form-heading">Write a review</h4>
+          {reviewError && <p className="error">{reviewError}</p>}
+          <div className="field">
+            <label>Rating</label>
+            <select
+              value={reviewForm.rating}
+              onChange={(e) => setReviewForm({ ...reviewForm, rating: e.target.value })}
+            >
+              {[5, 4, 3, 2, 1].map((n) => (
+                <option key={n} value={n}>{n} star{n === 1 ? "" : "s"}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>Comment (optional)</label>
+            <input
+              value={reviewForm.comment}
+              onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+              placeholder="Share your experience..."
+            />
+          </div>
+          <button className="primary" type="submit" disabled={reviewSubmitting}>
+            {reviewSubmitting ? "Submitting..." : "Submit review"}
+          </button>
+        </form>
+      </section>
     </div>
   );
 }
