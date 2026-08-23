@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { tokenizeCard, confirmPaymentIntent } from "../api/payment";
 import client from "../api/client";
@@ -15,6 +15,18 @@ function extractErrorMessage(err) {
   return "Payment could not be processed";
 }
 
+function SecureBadge() {
+  return (
+    <div className="secure-badge">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="4" y="11" width="16" height="10" rx="2" />
+        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+      </svg>
+      <span>Secure checkout — your card details are encrypted</span>
+    </div>
+  );
+}
+
 export default function Checkout() {
   const { orderId } = useParams();
   const location = useLocation();
@@ -24,6 +36,20 @@ export default function Checkout() {
   const [card, setCard] = useState({ number: "", exp_month: "", exp_year: "", cvc: "" });
   const [status, setStatus] = useState("idle"); // idle | processing | succeeded | declined | error
   const [message, setMessage] = useState("");
+  const [orderItems, setOrderItems] = useState(null); // null while unknown, [] if none/unsupported
+
+  useEffect(() => {
+    if (!orderId) return;
+    client.get(`/api/v1/orders/${orderId}`)
+      .then((res) => {
+        if (Array.isArray(res.data?.items)) {
+          setOrderItems(res.data.items);
+        } else {
+          setOrderItems([]);
+        }
+      })
+      .catch(() => setOrderItems([]));
+  }, [orderId]);
 
   if (!intent) {
     return <p className="error">No payment info found. Please checkout from your bag again.</p>;
@@ -67,12 +93,25 @@ export default function Checkout() {
   }
 
   return (
-    <div style={{ maxWidth: 440 }}>
-      <h2 style={{ marginBottom: 24 }}>Payment</h2>
+    <div className="checkout-page">
+      <h2 className="page-heading">Payment</h2>
 
-      <div className="checkout-summary" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      {orderItems && orderItems.length > 0 && (
+        <div className="order-summary-items">
+          {orderItems.map((item) => (
+            <div key={item.id} className="order-summary-item">
+              <span>{item.product?.name} {item.quantity > 1 ? `× ${item.quantity}` : ""}</span>
+              <span className="muted">
+                {((item.unit_price_minor * item.quantity) / 100).toFixed(2)} {intent.currency.toUpperCase()}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="checkout-summary">
         <span className="muted">Order #{orderId}</span>
-        <span className="price" style={{ fontSize: 18 }}>
+        <span className="price checkout-total-price">
           {(intent.amount_minor / 100).toFixed(2)} {intent.currency.toUpperCase()}
         </span>
       </div>
@@ -82,33 +121,36 @@ export default function Checkout() {
       {status === "error" && <p className="status-message error">{message}</p>}
 
       {status !== "succeeded" && (
-        <form onSubmit={handlePay} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          <div className="field">
-            <label>Card number</label>
-            <input value={card.number}
-              onChange={(e) => setCard({ ...card, number: e.target.value })} required />
-          </div>
-          <div className="field-row">
+        <>
+          <form onSubmit={handlePay} className="checkout-form">
             <div className="field">
-              <label>Month</label>
-              <input placeholder="MM" value={card.exp_month}
-                onChange={(e) => setCard({ ...card, exp_month: e.target.value })} required />
+              <label>Card number</label>
+              <input value={card.number}
+                onChange={(e) => setCard({ ...card, number: e.target.value })} required />
             </div>
-            <div className="field">
-              <label>Year</label>
-              <input placeholder="YYYY" value={card.exp_year}
-                onChange={(e) => setCard({ ...card, exp_year: e.target.value })} required />
+            <div className="field-row">
+              <div className="field">
+                <label>Month</label>
+                <input placeholder="MM" value={card.exp_month}
+                  onChange={(e) => setCard({ ...card, exp_month: e.target.value })} required />
+              </div>
+              <div className="field">
+                <label>Year</label>
+                <input placeholder="YYYY" value={card.exp_year}
+                  onChange={(e) => setCard({ ...card, exp_year: e.target.value })} required />
+              </div>
+              <div className="field">
+                <label>CVC</label>
+                <input value={card.cvc}
+                  onChange={(e) => setCard({ ...card, cvc: e.target.value })} required />
+              </div>
             </div>
-            <div className="field">
-              <label>CVC</label>
-              <input value={card.cvc}
-                onChange={(e) => setCard({ ...card, cvc: e.target.value })} required />
-            </div>
-          </div>
-          <button className="primary" type="submit" disabled={status === "processing"}>
-            {status === "processing" ? "Processing..." : "Pay now"}
-          </button>
-        </form>
+            <button className="primary" type="submit" disabled={status === "processing"}>
+              {status === "processing" ? "Processing..." : "Pay now"}
+            </button>
+          </form>
+          <SecureBadge />
+        </>
       )}
     </div>
   );
