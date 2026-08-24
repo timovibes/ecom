@@ -33,7 +33,7 @@ export default function Login() {
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
       <button className="primary" type="submit">Login</button>
-      <p className="muted">No account? <Link to="/signup">Sign Up</Link></p>
+      <p className="muted">No account? <Link to="/signup">Sign up</Link></p>
     </form>
   );
 }
