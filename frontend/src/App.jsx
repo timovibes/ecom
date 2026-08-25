@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
+import Wishlist from "./pages/Wishlist";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +38,10 @@ export default function App() {
               <Route
                 path="/orders"
                 element={<ProtectedRoute><Orders /></ProtectedRoute>}
+              />
+              <Route
+                path="/wishlist"
+                element={<ProtectedRoute><Wishlist /></ProtectedRoute>}
               />
               <Route
                 path="/admin"

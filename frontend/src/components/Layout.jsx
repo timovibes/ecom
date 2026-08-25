@@ -30,6 +30,7 @@ export default function Layout() {
             </Link>
             {user ? (
               <>
+                <Link to="/wishlist">Wishlist</Link>
                 <Link to="/orders">Orders</Link>
                 {user.is_admin && <Link to="/admin">Admin</Link>}
                 <button onClick={handleLogout}>Logout</button>
