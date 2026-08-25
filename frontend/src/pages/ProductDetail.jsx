@@ -32,7 +32,9 @@ export default function ProductDetail() {
   const [reviewError, setReviewError] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
-  // If we arrived via a product card, this brings you back to the exact filtered/sorted view.
+  const [inWishlist, setInWishlist] = useState(false);
+  const [wishlistBusy, setWishlistBusy] = useState(false);
+
   const backTo = location.state?.from || "/shop";
 
   useEffect(() => {
@@ -50,6 +52,40 @@ export default function ProductDetail() {
   }
 
   useEffect(loadReviews, [id]);
+
+  useEffect(() => {
+    if (!user) {
+      setInWishlist(false);
+      return;
+    }
+    client.get("/api/v1/wishlist/")
+      .then((res) => {
+        const found = res.data.items.some((i) => i.product.id === Number(id));
+        setInWishlist(found);
+      })
+      .catch(() => setInWishlist(false));
+  }, [id, user]);
+
+  async function toggleWishlist() {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    setWishlistBusy(true);
+    try {
+      if (inWishlist) {
+        await client.delete(`/api/v1/wishlist/${id}`);
+        setInWishlist(false);
+      } else {
+        await client.post(`/api/v1/wishlist/${id}`);
+        setInWishlist(true);
+      }
+    } catch {
+      setError("Could not update wishlist");
+    } finally {
+      setWishlistBusy(false);
+    }
+  }
 
   async function addToCart() {
     if (!user) {
@@ -126,7 +162,19 @@ export default function ProductDetail() {
           {product.category_name && (
             <p className="product-detail-eyebrow">{product.category_name}</p>
           )}
-          <h2>{product.name}</h2>
+
+          <div className="product-detail-title-row">
+            <h2>{product.name}</h2>
+            <button
+              className={`wishlist-btn ${inWishlist ? "active" : ""}`}
+              onClick={toggleWishlist}
+              disabled={wishlistBusy}
+              aria-label={inWishlist ? "Remove from wishlist" : "Save for later"}
+              title={inWishlist ? "Remove from wishlist" : "Save for later"}
+            >
+              {inWishlist ? "♥" : "♡"}
+            </button>
+          </div>
 
           {product.review_count > 0 && (
             <div className="product-detail-rating">
