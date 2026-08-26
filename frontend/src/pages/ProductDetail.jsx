@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 
 function Stars({ value, size = 14 }) {
   const rounded = Math.round(value || 0);
@@ -23,6 +24,7 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const { user } = useAuth();
   const { refreshCart } = useCart();
+  const { isWishlisted, addToWishlist, removeFromWishlist, refreshWishlist } = useWishlist();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,8 +34,8 @@ export default function ProductDetail() {
   const [reviewError, setReviewError] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
-  const [inWishlist, setInWishlist] = useState(false);
   const [wishlistBusy, setWishlistBusy] = useState(false);
+  const inWishlist = isWishlisted(Number(id));
 
   const backTo = location.state?.from || "/shop";
 
@@ -54,17 +56,8 @@ export default function ProductDetail() {
   useEffect(loadReviews, [id]);
 
   useEffect(() => {
-    if (!user) {
-      setInWishlist(false);
-      return;
-    }
-    client.get("/api/v1/wishlist/")
-      .then((res) => {
-        const found = res.data.items.some((i) => i.product.id === Number(id));
-        setInWishlist(found);
-      })
-      .catch(() => setInWishlist(false));
-  }, [id, user]);
+    if (user) refreshWishlist();
+  }, [user, refreshWishlist]);
 
   async function toggleWishlist() {
     if (!user) {
@@ -74,11 +67,9 @@ export default function ProductDetail() {
     setWishlistBusy(true);
     try {
       if (inWishlist) {
-        await client.delete(`/api/v1/wishlist/${id}`);
-        setInWishlist(false);
+        await removeFromWishlist(Number(id));
       } else {
-        await client.post(`/api/v1/wishlist/${id}`);
-        setInWishlist(true);
+        await addToWishlist(Number(id));
       }
     } catch {
       setError("Could not update wishlist");
