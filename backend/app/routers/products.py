@@ -49,6 +49,34 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
+@router.get("/{product_id}/related", response_model=List[ProductOut])
+def get_related_products(
+    product_id: int,
+    limit: int = Query(4, ge=1, le=12),
+    db: Session = Depends(get_db),
+):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    query = db.query(Product).filter(Product.id != product_id)
+
+    if product.category_id:
+        query = query.filter(Product.category_id == product.category_id)
+
+    related = query.order_by(Product.created_at.desc()).limit(limit).all()
+
+    if not related and product.category_id:
+        related = (
+            db.query(Product)
+            .filter(Product.id != product_id)
+            .order_by(Product.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+
+    return related
+
 @router.post("/", response_model=ProductOut, status_code=201)
 def create_product(
     product_in: ProductCreate,
