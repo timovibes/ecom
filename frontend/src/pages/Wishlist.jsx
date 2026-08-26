@@ -1,26 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import client from "../api/client";
+import { useWishlist } from "../context/WishlistContext";
 
 export default function Wishlist() {
-  const [items, setItems] = useState([]);
+  const { items, refreshWishlist, removeFromWishlist } = useWishlist();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  function load() {
-    setLoading(true);
-    client.get("/api/v1/wishlist/")
-      .then((res) => setItems(res.data.items))
+  useEffect(() => {
+    Promise.resolve(refreshWishlist())
       .catch(() => setError("Could not load wishlist"))
       .finally(() => setLoading(false));
-  }
-
-  useEffect(load, []);
+  }, [refreshWishlist]);
 
   async function remove(productId) {
     try {
-      await client.delete(`/api/v1/wishlist/${productId}`);
-      setItems((prev) => prev.filter((i) => i.product.id !== productId));
+      await removeFromWishlist(productId);
     } catch {
       setError("Could not remove item");
     }
