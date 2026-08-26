@@ -37,6 +37,9 @@ export default function ProductDetail() {
   const [wishlistBusy, setWishlistBusy] = useState(false);
   const inWishlist = isWishlisted(Number(id));
 
+  const [related, setRelated] = useState([]);
+  const [relatedLoading, setRelatedLoading] = useState(true);
+
   const backTo = location.state?.from || "/shop";
 
   useEffect(() => {
@@ -54,6 +57,14 @@ export default function ProductDetail() {
   }
 
   useEffect(loadReviews, [id]);
+
+  useEffect(() => {
+    setRelatedLoading(true);
+    client.get(`/api/v1/products/${id}/related`)
+      .then((res) => setRelated(res.data))
+      .catch(() => setRelated([]))
+      .finally(() => setRelatedLoading(false));
+  }, [id]);
 
   useEffect(() => {
     if (user) refreshWishlist();
@@ -278,6 +289,30 @@ export default function ProductDetail() {
           </button>
         </form>
       </section>
+
+      {!relatedLoading && related.length > 0 && (
+        <section className="related-section">
+          <h3 className="related-heading">You might also like</h3>
+          <div className="related-grid">
+            {related.map((p) => (
+              <Link
+                key={p.id}
+                to={`/products/${p.id}`}
+                state={{ from: backTo }}
+                className="related-card"
+              >
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.name} />
+                ) : (
+                  <div className="no-image small">No image</div>
+                )}
+                <h4>{p.name}</h4>
+                <p>{(p.price_minor / 100).toFixed(2)} {p.currency.toUpperCase()}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
