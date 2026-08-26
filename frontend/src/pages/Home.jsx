@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import client from "../api/client";
 
@@ -6,6 +6,9 @@ const PAGE_SIZE = 12;
 const SECTION_PREVIEW_SIZE = 8;
 const SECTIONS_PER_PAGE = 2;
 const SKELETON_COUNT = 8;
+const SEARCH_DEBOUNCE_MS = 350;
+const SUGGESTION_LIMIT = 6;
+const SUGGESTION_MIN_CHARS = 2;
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest" },
@@ -13,6 +16,15 @@ const SORT_OPTIONS = [
   { value: "price_desc", label: "Price: High to Low" },
   { value: "name_asc", label: "Name: A to Z" },
 ];
+
+function useDebouncedValue(value, delay) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
 function sortProducts(products, sortBy) {
   const sorted = [...products];
@@ -88,6 +100,13 @@ export default function Home() {
   const [visibleSections, setVisibleSections] = useState(SECTIONS_PER_PAGE);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Local, instant text-box state — decoupled from the URL/fetch-triggering `search` value
+  // so typing doesn't fire a request on every keystroke.
+  const [searchInput, setSearchInput] = useState(search);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const debouncedSearchInput = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
+  const searchWrapRef = useRef(null);
+
   function updateFilterParams(updates) {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -101,6 +120,19 @@ export default function Home() {
 
   const setSearch = (value) => updateFilterParams({ q: value });
   const setCategoryId = (value) => updateFilterParams({ category: value });
+
+  // Keep the text box in sync when `search` changes from elsewhere (filter chip ×, clear all, back/forward nav).
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  // Commit the debounced text to the URL, which drives the actual product fetch below.
+  useEffect(() => {
+    if (debouncedSearchInput !== search) {
+      setSearch(debouncedSearchInput);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchInput]);
 
   useEffect(() => {
     client.get("/api/v1/categories/")
@@ -132,6 +164,17 @@ export default function Home() {
   useEffect(() => {
     setVisibleSections(SECTIONS_PER_PAGE);
   }, [search, categoryId]);
+
+  // Close the suggestions dropdown on outside click.
+  useEffect(() => {
+    function handleClick(e) {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target)) {
+        setSuggestionsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const browsingAll = !search && !categoryId;
 
@@ -198,6 +241,25 @@ export default function Home() {
   // Passed to product links so their detail-page breadcrumb can return to this exact view.
   const backTo = location.pathname + location.search;
 
+  // Suggestions ride on the same debounced/committed query as the main fetch — no second
+  // endpoint needed. Only show once `products` actually reflects the current typed text.
+  const showSuggestions =
+    suggestionsOpen &&
+    searchInput.trim().length >= SUGGESTION_MIN_CHARS &&
+    search === debouncedSearchInput &&
+    !loading;
+  const suggestions = showSuggestions ? products.slice(0, SUGGESTION_LIMIT) : [];
+
+  function goToSuggestion() {
+    setSuggestionsOpen(false);
+    setSidebarOpen(false);
+  }
+
+  function viewAllResults() {
+    setSuggestionsOpen(false);
+    setSidebarOpen(false);
+  }
+
   return (
     <div className="shop">
       {sidebarOpen && (
@@ -211,11 +273,44 @@ export default function Home() {
 
         <div className="sidebar-section">
           <h2 className="sidebar-heading">Search</h2>
-          <input
-            placeholder="Search products..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className="search-wrap" ref={searchWrapRef}>
+            <input
+              placeholder="Search products..."
+              value={searchInput}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                setSuggestionsOpen(true);
+              }}
+              onFocus={() => setSuggestionsOpen(true)}
+              autoComplete="off"
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="search-suggestions">
+                {suggestions.map((p) => (
+                  <Link
+                    key={p.id}
+                    to={`/products/${p.id}`}
+                    state={{ from: backTo }}
+                    className="search-suggestion-item"
+                    onMouseDown={goToSuggestion}
+                  >
+                    {p.image_url ? (
+                      <img src={p.image_url} alt="" className="search-suggestion-thumb" />
+                    ) : (
+                      <span className="search-suggestion-thumb" />
+                    )}
+                    <span>{p.name}</span>
+                    <span className="search-suggestion-price">
+                      {(p.price_minor / 100).toFixed(2)} {p.currency.toUpperCase()}
+                    </span>
+                  </Link>
+                ))}
+                <button className="search-suggestions-footer" onMouseDown={viewAllResults}>
+                  See all results for "{debouncedSearchInput}"
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="sidebar-section">
