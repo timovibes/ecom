@@ -90,6 +90,8 @@ export default function Home() {
 
   const search = searchParams.get("q") || "";
   const categoryId = searchParams.get("category") || "";
+  const minPrice = searchParams.get("min_price") || "";
+  const maxPrice = searchParams.get("max_price") || "";
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -107,6 +109,11 @@ export default function Home() {
   const debouncedSearchInput = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   const searchWrapRef = useRef(null);
 
+  // Local price-box state, applied on demand (Enter key or Apply button) rather than
+  // on every keystroke, since a price filter fires a real backend fetch.
+  const [minPriceInput, setMinPriceInput] = useState(minPrice);
+  const [maxPriceInput, setMaxPriceInput] = useState(maxPrice);
+
   function updateFilterParams(updates) {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -121,10 +128,23 @@ export default function Home() {
   const setSearch = (value) => updateFilterParams({ q: value });
   const setCategoryId = (value) => updateFilterParams({ category: value });
 
+  function applyPriceFilter() {
+    updateFilterParams({ min_price: minPriceInput, max_price: maxPriceInput });
+    setSidebarOpen(false);
+  }
+
+  const clearPrice = () => updateFilterParams({ min_price: "", max_price: "" });
+
   // Keep the text box in sync when `search` changes from elsewhere (filter chip ×, clear all, back/forward nav).
   useEffect(() => {
     setSearchInput(search);
   }, [search]);
+
+  // Keep the price boxes in sync when the URL changes from elsewhere (chip ×, clear all, back/forward nav).
+  useEffect(() => {
+    setMinPriceInput(minPrice);
+    setMaxPriceInput(maxPrice);
+  }, [minPrice, maxPrice]);
 
   // Commit the debounced text to the URL, which drives the actual product fetch below.
   useEffect(() => {
@@ -145,7 +165,10 @@ export default function Home() {
     const params = {};
     if (search) params.search = search;
     if (categoryId) params.category_id = categoryId;
-    if (!search && !categoryId) params.limit = 100; // browsing-all: need full catalog to group by category
+    // price inputs are whole-currency values in the UI; the API expects minor units (cents)
+    if (minPrice) params.min_price = Math.round(Number(minPrice) * 100);
+    if (maxPrice) params.max_price = Math.round(Number(maxPrice) * 100);
+    if (!search && !categoryId && !minPrice && !maxPrice) params.limit = 100; // browsing-all: need full catalog to group by category
     client.get("/api/v1/products/", { params })
       .then((res) => {
         setProducts(res.data);
@@ -153,17 +176,17 @@ export default function Home() {
       })
       .catch(() => setError("Could not load products"))
       .finally(() => setLoading(false));
-  }, [search, categoryId]);
+  }, [search, categoryId, minPrice, maxPrice]);
 
   // Reset to page 1 whenever the result set or sort order changes underneath the pager.
   useEffect(() => {
     setPage(1);
-  }, [search, categoryId, sortBy]);
+  }, [search, categoryId, sortBy, minPrice, maxPrice]);
 
   // Reset section pagination whenever we come back to the "browsing all" view.
   useEffect(() => {
     setVisibleSections(SECTIONS_PER_PAGE);
-  }, [search, categoryId]);
+  }, [search, categoryId, minPrice, maxPrice]);
 
   // Close the suggestions dropdown on outside click.
   useEffect(() => {
@@ -176,7 +199,7 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const browsingAll = !search && !categoryId;
+  const browsingAll = !search && !categoryId && !minPrice && !maxPrice;
 
   const sectioned = useMemo(() => {
     if (!browsingAll) return [];
@@ -218,7 +241,7 @@ export default function Home() {
   const totalPages = Math.max(1, Math.ceil(sortedFlat.length / PAGE_SIZE));
   const pageItems = sortedFlat.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const hasActiveFilters = Boolean(search || categoryId);
+  const hasActiveFilters = Boolean(search || categoryId || minPrice || maxPrice);
 
   const selectCategory = (id) => {
     setCategoryId(id);
@@ -227,7 +250,7 @@ export default function Home() {
 
   const clearSearch = () => setSearch("");
   const clearCategory = () => setCategoryId("");
-  const clearAll = () => updateFilterParams({ q: "", category: "" });
+  const clearAll = () => updateFilterParams({ q: "", category: "", min_price: "", max_price: "" });
 
   const activeCategoryName = categoryId
     ? categories.find((c) => String(c.id) === String(categoryId))?.name
@@ -236,7 +259,8 @@ export default function Home() {
   const handleShowMore = () => setVisibleSections((n) => n + SECTIONS_PER_PAGE);
   const handleShowLess = () => setVisibleSections(SECTIONS_PER_PAGE);
 
-  const activeFilterCount = (search ? 1 : 0) + (categoryId ? 1 : 0);
+  const activeFilterCount =
+    (search ? 1 : 0) + (categoryId ? 1 : 0) + (minPrice ? 1 : 0) + (maxPrice ? 1 : 0);
 
   // Passed to product links so their detail-page breadcrumb can return to this exact view.
   const backTo = location.pathname + location.search;
@@ -337,6 +361,30 @@ export default function Home() {
             ))}
           </ul>
         </div>
+
+        <div className="sidebar-section">
+          <h2 className="sidebar-heading">Price</h2>
+          <div className="price-range-inputs">
+            <input
+              type="number"
+              min="0"
+              placeholder="Min"
+              value={minPriceInput}
+              onChange={(e) => setMinPriceInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyPriceFilter()}
+            />
+            <span className="price-range-sep">–</span>
+            <input
+              type="number"
+              min="0"
+              placeholder="Max"
+              value={maxPriceInput}
+              onChange={(e) => setMaxPriceInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyPriceFilter()}
+            />
+          </div>
+          <button className="price-range-apply" onClick={applyPriceFilter}>Apply</button>
+        </div>
       </aside>
 
       <div className="shop-main">
@@ -375,6 +423,16 @@ export default function Home() {
             {search && (
               <button className="filter-chip" onClick={clearSearch}>
                 "{search}" <span className="filter-chip-x">×</span>
+              </button>
+            )}
+            {(minPrice || maxPrice) && (
+              <button className="filter-chip" onClick={clearPrice}>
+                {minPrice && maxPrice
+                  ? `${minPrice}–${maxPrice}`
+                  : minPrice
+                    ? `From ${minPrice}`
+                    : `Up to ${maxPrice}`}{" "}
+                <span className="filter-chip-x">×</span>
               </button>
             )}
             {activeFilterCount > 1 && (
