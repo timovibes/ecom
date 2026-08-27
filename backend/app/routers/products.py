@@ -24,6 +24,8 @@ def list_products(
     category_id: Optional[int] = None,
     search: Optional[str] = Query(None, description="search by product name"),
     sort_by: str = Query("newest", description=f"one of {sorted(SORT_OPTIONS)}"),
+    min_price: Optional[int] = Query(None, ge=0, description="minimum price in minor units"),
+    max_price: Optional[int] = Query(None, ge=0, description="maximum price in minor units"),
     skip: int = Query(0, ge=0),
     limit: int = Query(24, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -33,6 +35,10 @@ def list_products(
         query = query.filter(Product.category_id == category_id)
     if search:
         query = query.filter(Product.name.ilike(f"%{search}%"))
+    if min_price is not None:
+        query = query.filter(Product.price_minor >= min_price)
+    if max_price is not None:
+        query = query.filter(Product.price_minor <= max_price)
 
     total = query.count()
     response.headers["X-Total-Count"] = str(total)
