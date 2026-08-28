@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import List, Optional
@@ -8,7 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.order import Order, OrderItem
+from app.models.order import Order, OrderItem, OrderStatusEvent
 from app.models.product import Product
 from app.models.user import User
 from app.schemas.order import OrderOut
@@ -16,11 +17,27 @@ from app.schemas.admin import OrderStatusUpdate
 from app.dependencies import get_current_admin
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+logger = logging.getLogger(__name__)
 
 ALLOWED_STATUSES = {"pending", "paid", "declined", "shipped", "cancelled"}
 
 # Statuses that count as realized revenue for analytics purposes.
 REVENUE_STATUSES = {"paid", "shipped"}
+
+
+def notify_order_status_change(order: Order) -> None:
+    """Notification hook for order status changes.
+
+    No email provider is configured yet, so this just logs the event. Swap the
+    body of this function for a real send (SMTP, SendGrid, etc.) once one is
+    wired up — callers don't need to change.
+    """
+    logger.info(
+        "Order #%s status changed to '%s' (user_id=%s)",
+        order.id,
+        order.status,
+        order.user_id,
+    )
 
 
 @router.get("/orders", response_model=List[OrderOut])
@@ -60,8 +77,12 @@ def update_order_status(
         raise HTTPException(status_code=404, detail="Order not found")
 
     order.status = status_in.status
+    db.add(OrderStatusEvent(order_id=order.id, status=status_in.status))
     db.commit()
     db.refresh(order)
+
+    notify_order_status_change(order)
+
     return order
 
 
