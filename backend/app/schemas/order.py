@@ -30,6 +30,8 @@ class OrderOut(BaseModel):
     status: str
     total_amount_minor: int
     currency: str
+    coupon_code: Optional[str] = None
+    discount_minor: int = 0
     created_at: datetime
     items: List[OrderItemOut]
     payment: Optional[PaymentOut] = None
