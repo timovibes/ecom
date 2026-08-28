@@ -32,6 +32,30 @@ function AdminPagination({ page, totalPages, onPageChange }) {
   );
 }
 
+function formatMoney(minor, currency = "kes") {
+  return `${(minor / 100).toFixed(2)} ${currency.toUpperCase()}`;
+}
+
+function RevenueChart({ points }) {
+  if (points.length === 0) {
+    return <p className="muted">No revenue in this period yet.</p>;
+  }
+  const max = Math.max(...points.map((p) => p.revenue_minor), 1);
+  return (
+    <div className="revenue-chart">
+      {points.map((p) => (
+        <div className="revenue-chart-bar-wrap" key={p.date} title={`${p.date}: ${formatMoney(p.revenue_minor)}`}>
+          <div
+            className="revenue-chart-bar"
+            style={{ height: `${Math.max(2, (p.revenue_minor / max) * 100)}%` }}
+          />
+          <span className="revenue-chart-label">{p.date.slice(5)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Admin() {
   const [tab, setTab] = useState("products");
   const [products, setProducts] = useState([]);
@@ -47,6 +71,13 @@ export default function Admin() {
   const [categoriesPage, setCategoriesPage] = useState(1);
   const [ordersPage, setOrdersPage] = useState(1);
 
+  const [analyticsSummary, setAnalyticsSummary] = useState(null);
+  const [revenuePoints, setRevenuePoints] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [lowStock, setLowStock] = useState([]);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState("");
+
   function loadAll() {
     client.get("/api/v1/products/").then((res) => setProducts(res.data)).catch(() => {});
     client.get("/api/v1/categories/").then((res) => setCategories(res.data)).catch(() => {});
@@ -54,6 +85,27 @@ export default function Admin() {
   }
 
   useEffect(loadAll, []);
+
+  // Load analytics lazily, only when that tab is opened.
+  useEffect(() => {
+    if (tab !== "analytics") return;
+    setAnalyticsLoading(true);
+    setAnalyticsError("");
+    Promise.all([
+      client.get("/api/v1/admin/analytics/summary"),
+      client.get("/api/v1/admin/analytics/revenue", { params: { days: 30 } }),
+      client.get("/api/v1/admin/analytics/top-products", { params: { limit: 5 } }),
+      client.get("/api/v1/admin/analytics/low-stock", { params: { threshold: 5 } }),
+    ])
+      .then(([summaryRes, revenueRes, topRes, lowRes]) => {
+        setAnalyticsSummary(summaryRes.data);
+        setRevenuePoints(revenueRes.data);
+        setTopProducts(topRes.data);
+        setLowStock(lowRes.data);
+      })
+      .catch(() => setAnalyticsError("Could not load analytics"))
+      .finally(() => setAnalyticsLoading(false));
+  }, [tab]);
 
   // Keep each tab's page in range if the underlying list shrinks (e.g. after a delete).
   useEffect(() => {
@@ -138,6 +190,7 @@ export default function Admin() {
         <button className={tab === "products" ? "active" : ""} onClick={() => setTab("products")}>Products</button>
         <button className={tab === "categories" ? "active" : ""} onClick={() => setTab("categories")}>Categories</button>
         <button className={tab === "orders" ? "active" : ""} onClick={() => setTab("orders")}>Orders</button>
+        <button className={tab === "analytics" ? "active" : ""} onClick={() => setTab("analytics")}>Analytics</button>
       </div>
 
       {tab === "products" && (
@@ -203,6 +256,69 @@ export default function Admin() {
             </div>
           ))}
           <AdminPagination page={ordersPage} totalPages={ordersTotalPages} onPageChange={setOrdersPage} />
+        </div>
+      )}
+
+      {tab === "analytics" && (
+        <div className="admin-analytics">
+          {analyticsLoading && <p className="muted">Loading analytics...</p>}
+          {analyticsError && <p className="error">{analyticsError}</p>}
+
+          {!analyticsLoading && !analyticsError && analyticsSummary && (
+            <>
+              <div className="analytics-summary-grid">
+                <div className="analytics-summary-card">
+                  <span className="analytics-summary-label">Total revenue</span>
+                  <span className="analytics-summary-value">
+                    {formatMoney(analyticsSummary.total_revenue_minor)}
+                  </span>
+                </div>
+                <div className="analytics-summary-card">
+                  <span className="analytics-summary-label">Paid orders</span>
+                  <span className="analytics-summary-value">{analyticsSummary.order_count}</span>
+                </div>
+                <div className="analytics-summary-card">
+                  <span className="analytics-summary-label">Avg order value</span>
+                  <span className="analytics-summary-value">
+                    {formatMoney(analyticsSummary.average_order_value_minor)}
+                  </span>
+                </div>
+                <div className="analytics-summary-card">
+                  <span className="analytics-summary-label">Low stock items</span>
+                  <span className="analytics-summary-value">{analyticsSummary.low_stock_count}</span>
+                </div>
+              </div>
+
+              <div className="analytics-section">
+                <h3 className="analytics-section-heading">Revenue — last 30 days</h3>
+                <RevenueChart points={revenuePoints} />
+              </div>
+
+              <div className="analytics-columns">
+                <div className="analytics-section">
+                  <h3 className="analytics-section-heading">Top products</h3>
+                  {topProducts.length === 0 && <p className="muted">No sales yet.</p>}
+                  {topProducts.map((p) => (
+                    <div key={p.product_id} className="admin-row">
+                      <span>{p.name} — {p.quantity_sold} sold</span>
+                      <span>{formatMoney(p.revenue_minor)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="analytics-section">
+                  <h3 className="analytics-section-heading">Low stock</h3>
+                  {lowStock.length === 0 && <p className="muted">Nothing running low.</p>}
+                  {lowStock.map((p) => (
+                    <div key={p.id} className="admin-row">
+                      <span>{p.name}</span>
+                      <span className="low-stock-count">{p.stock_quantity} left</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
