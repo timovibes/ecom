@@ -78,6 +78,17 @@ export default function Admin() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState("");
 
+  const [coupons, setCoupons] = useState([]);
+  const [couponsLoading, setCouponsLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [newCoupon, setNewCoupon] = useState({
+    code: "",
+    discount_type: "percentage",
+    discount_value: "",
+    max_uses: "",
+    expires_at: "",
+  });
+
   function loadAll() {
     client.get("/api/v1/products/").then((res) => setProducts(res.data)).catch(() => {});
     client.get("/api/v1/categories/").then((res) => setCategories(res.data)).catch(() => {});
@@ -105,6 +116,20 @@ export default function Admin() {
       })
       .catch(() => setAnalyticsError("Could not load analytics"))
       .finally(() => setAnalyticsLoading(false));
+  }, [tab]);
+
+  function loadCoupons() {
+    setCouponsLoading(true);
+    setCouponError("");
+    client.get("/api/v1/admin/coupons")
+      .then((res) => setCoupons(res.data))
+      .catch(() => setCouponError("Could not load coupons"))
+      .finally(() => setCouponsLoading(false));
+  }
+
+  useEffect(() => {
+    if (tab !== "coupons") return;
+    loadCoupons();
   }, [tab]);
 
   // Keep each tab's page in range if the underlying list shrinks (e.g. after a delete).
@@ -172,6 +197,34 @@ export default function Admin() {
     loadAll();
   }
 
+  async function createCoupon(e) {
+    e.preventDefault();
+    setCouponError("");
+    try {
+      await client.post("/api/v1/admin/coupons", {
+        code: newCoupon.code,
+        discount_type: newCoupon.discount_type,
+        discount_value: Number(newCoupon.discount_value),
+        max_uses: newCoupon.max_uses ? Number(newCoupon.max_uses) : null,
+        expires_at: newCoupon.expires_at ? new Date(newCoupon.expires_at).toISOString() : null,
+      });
+      setNewCoupon({ code: "", discount_type: "percentage", discount_value: "", max_uses: "", expires_at: "" });
+      loadCoupons();
+    } catch (err) {
+      setCouponError(err.response?.data?.detail || "Could not create coupon");
+    }
+  }
+
+  async function toggleCoupon(id) {
+    await client.patch(`/api/v1/admin/coupons/${id}/toggle`);
+    loadCoupons();
+  }
+
+  async function deleteCoupon(id) {
+    await client.delete(`/api/v1/admin/coupons/${id}`);
+    loadCoupons();
+  }
+
   if (error) return <p className="error">{error}</p>;
 
   const productsTotalPages = Math.max(1, Math.ceil(products.length / ROWS_PER_PAGE));
@@ -191,6 +244,7 @@ export default function Admin() {
         <button className={tab === "categories" ? "active" : ""} onClick={() => setTab("categories")}>Categories</button>
         <button className={tab === "orders" ? "active" : ""} onClick={() => setTab("orders")}>Orders</button>
         <button className={tab === "analytics" ? "active" : ""} onClick={() => setTab("analytics")}>Analytics</button>
+        <button className={tab === "coupons" ? "active" : ""} onClick={() => setTab("coupons")}>Coupons</button>
       </div>
 
       {tab === "products" && (
@@ -319,6 +373,81 @@ export default function Admin() {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {tab === "coupons" && (
+        <div>
+          <form onSubmit={createCoupon} className="admin-form">
+            <div className="field">
+              <label>Code</label>
+              <input
+                value={newCoupon.code}
+                onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value })}
+                placeholder="e.g. WELCOME10"
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Type</label>
+              <select
+                value={newCoupon.discount_type}
+                onChange={(e) => setNewCoupon({ ...newCoupon, discount_type: e.target.value })}
+              >
+                <option value="percentage">Percentage off</option>
+                <option value="fixed">Fixed amount off (minor unit)</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>{newCoupon.discount_type === "percentage" ? "Percent (1-100)" : "Amount (minor unit)"}</label>
+              <input
+                value={newCoupon.discount_value}
+                onChange={(e) => setNewCoupon({ ...newCoupon, discount_value: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Max uses (optional)</label>
+              <input
+                value={newCoupon.max_uses}
+                onChange={(e) => setNewCoupon({ ...newCoupon, max_uses: e.target.value })}
+                placeholder="Unlimited"
+              />
+            </div>
+            <div className="field">
+              <label>Expires (optional)</label>
+              <input
+                type="date"
+                value={newCoupon.expires_at}
+                onChange={(e) => setNewCoupon({ ...newCoupon, expires_at: e.target.value })}
+              />
+            </div>
+            <button className="primary" type="submit">Create coupon</button>
+          </form>
+
+          {couponError && <p className="error">{couponError}</p>}
+          {couponsLoading && <p className="muted">Loading coupons...</p>}
+
+          {!couponsLoading && coupons.length === 0 && <p className="muted">No coupons yet.</p>}
+
+          {!couponsLoading && coupons.map((c) => (
+            <div key={c.id} className="admin-row">
+              <span>
+                <strong>{c.code}</strong>{" "}
+                {c.discount_type === "percentage" ? `${c.discount_value}% off` : `${(c.discount_value / 100).toFixed(2)} off`}
+                {" — used "}{c.times_used}{c.max_uses ? ` / ${c.max_uses}` : ""}
+                {c.expires_at ? ` — expires ${new Date(c.expires_at).toLocaleDateString()}` : ""}
+                {" — "}
+                <span className={c.active ? "coupon-status-active" : "coupon-status-inactive"}>
+                  {c.active ? "active" : "inactive"}
+                </span>
+              </span>
+              <span>
+                <button onClick={() => toggleCoupon(c.id)}>{c.active ? "Deactivate" : "Activate"}</button>
+                <button className="admin-row-delete" onClick={() => deleteCoupon(c.id)}>Delete</button>
+              </span>
+            </div>
+          ))}
         </div>
       )}
 
