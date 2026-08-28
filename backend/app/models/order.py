@@ -11,6 +11,8 @@ class Order(Base):
     status = Column(String, default="pending")   # pending, paid, declined, shipped, cancelled
     total_amount_minor = Column(Integer, nullable=False)
     currency = Column(String, default="kes")
+    coupon_code = Column(String, nullable=True)
+    discount_minor = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
